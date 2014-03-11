@@ -17,6 +17,7 @@
 #include <boost/noncopyable.hpp>
 
 #include "fxbuffer.h"
+#include "fx_timer_mgr.h"
 
 class FXServer : boost::noncopyable
 {
@@ -38,6 +39,7 @@ class FXServer : boost::noncopyable
 
     private:
         static const int max_fd_count = 100;
+        FXTimerMgr timer_mgr_;
         std::map<int, FXBuffer > buf_map_;
         int listen_fd_;
         int epoll_fd_;

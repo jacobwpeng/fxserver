@@ -12,14 +12,29 @@
 #include <sys/epoll.h>
 #include <sys/socket.h>
 #include <sys/types.h>
+#include <sys/time.h>
 #include <netinet/in.h>
 #include <fcntl.h>
 #include <cassert>
 #include <algorithm>
+#include <iostream>
 #include <boost/typeof/typeof.hpp>
+#include <boost/optional.hpp>
+#include <boost/bind.hpp>
 #include <glog/logging.h>
 
+#include "fxutils.hpp"
 #include "fxserver.h"
+
+namespace detail
+{
+    void timer_call_back(unsigned val)
+    {
+        //LOG(INFO) << "in callback, val=" << val;
+    }
+
+    static const unsigned interval = 1000;       /* in milliseconds */
+}
 
 FXServer::FXServer()
 {
@@ -74,6 +89,8 @@ int FXServer::Init(int port)
         close(epoll_fd_);
         return ret;
     }
+
+    timer_mgr_.RunAfter( detail::interval, boost::bind(detail::timer_call_back, 0) );
     return 0;
 }
 
@@ -84,14 +101,26 @@ void FXServer::Run()
     LOG(INFO) << "epoll fd=" << epoll_fd_
         << ", listen_fd=" << listen_fd_;
 
+    timer_mgr_.Run();
+
+    int time_to_sleep = -1;
+    boost::optional<uint64_t> opt_latest_time = timer_mgr_.GetLatestExpireTime();
+    if( opt_latest_time )
+    {
+        time_to_sleep = opt_latest_time.get() - NowInMilliSeconds();
+    }
+
     const int max_events = 20;
+
     epoll_event events[max_events];
     sockaddr_in clt_addr;
     const int len = sizeof(clt_addr);
+    unsigned times = 0;
+
+    uint64_t last_wakeup_time = 0;
     while(1)
     {
-        int nfds = epoll_wait(epoll_fd_, events, max_events, -1);
-        LOG(INFO) << "epoll_wait return " << nfds;
+        int nfds = epoll_wait(epoll_fd_, events, max_events, time_to_sleep);
         if( nfds < 0 )
         {
             LOG(ERROR) << "epoll_wait failed, ret="
@@ -100,21 +129,52 @@ void FXServer::Run()
                        << strerror(errno);
             exit(1);
         }
-        for( int i = 0; i < nfds; ++i )
+        else if( nfds == 0 )
         {
-            if( events[i].data.fd == listen_fd_ )
+            if( 0 != timer_mgr_.TriggerExpiredTimers( NowInMilliSeconds() ) )
             {
-                int client_fd = accept(listen_fd_, (sockaddr *)&clt_addr, (unsigned*)&len );
-                this->OnConnect(client_fd);
+                uint64_t now = NowInMilliSeconds();
+                if( last_wakeup_time != 0 )
+                {
+                    /* 
+                    LOG(INFO) << "sleep time = " << (now-last_wakeup_time)
+                        << ", time_to_sleep = " << time_to_sleep;
+                        */
+                    std::cerr << "delta = " << ( now - last_wakeup_time ) << '\n';
+                }
+                last_wakeup_time = now;
+                timer_mgr_.RunAfter( detail::interval, boost::bind(detail::timer_call_back, ++times) );
             }
-            else if( events[i].events & EPOLLIN )
+        }
+        else
+        {
+            for( int i = 0; i < nfds; ++i )
             {
-                this->OnMessage(events[i].data.fd);
+                if( events[i].data.fd == listen_fd_ )
+                {
+                    int client_fd = accept(listen_fd_, (sockaddr *)&clt_addr, (unsigned*)&len );
+                    this->OnConnect(client_fd);
+                }
+                else if( events[i].events & EPOLLIN )
+                {
+                    this->OnMessage(events[i].data.fd);
+                }
+                else if( events[i].events & EPOLLOUT )
+                {
+                    this->OnWritable(events[i].data.fd);
+                }
             }
-            else if( events[i].events & EPOLLOUT )
-            {
-                this->OnWritable(events[i].data.fd);
-            }
+            timer_mgr_.TriggerExpiredTimers( NowInMilliSeconds() );
+        }
+
+        opt_latest_time = timer_mgr_.GetLatestExpireTime();
+        if( opt_latest_time )
+        {
+            time_to_sleep = opt_latest_time.get() - NowInMilliSeconds();
+        }
+        else
+        {
+            time_to_sleep = -1;
         }
     }
     close(epoll_fd_);
