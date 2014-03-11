@@ -4,7 +4,7 @@ PROJECT( fxserver )
 SET(CMAKE_C_COMPILER "gcc")
 SET(CMAKE_CXX_COMPILER "g++")
 
-SET(CMAKE_CXX_FLAGS "-Wall -Werror -O3")
+SET(CMAKE_CXX_FLAGS "-Wall -Wno-unused-local-typedefs -Werror -O3")
 
 SET(CMAKE_FIND_LIBRARY_PREFIXES "lib")
 SET(CMAKE_FIND_LIBRARY_SUFFIXES ".so" ".a")
