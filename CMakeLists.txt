@@ -1,16 +1,15 @@
+INCLUDE(CheckCXXCompilerFlag)
 CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
-PROJECT( fxserver )
-
 SET(CMAKE_C_COMPILER "gcc")
 SET(CMAKE_CXX_COMPILER "g++")
+PROJECT( fxserver )
+
 SET(CMAKE_CXX_FLAGS "-Wall -Werror -O3")
 
-if (CMAKE_COMPILER_IS_GNUCC)
-    execute_process(COMMAND ${CMAKE_C_COMPILER} -dumpversion OUTPUT_VARIABLE GCC_VERSION)
-    if (GCC_VERSION VERSION_GREATER 4.8 OR GCC_VERSION VERSION_EQUAL 4.8)
-        SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unused-local-typedefs")
-    endif()
-endif()
+CHECK_CXX_COMPILER_FLAG("-Wno-unused-local-typedefs" support)
+IF(support)
+    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unused-local-typedefs")
+ENDIF()
 
 SET(CMAKE_FIND_LIBRARY_PREFIXES "lib")
 SET(CMAKE_FIND_LIBRARY_SUFFIXES ".so" ".a")
