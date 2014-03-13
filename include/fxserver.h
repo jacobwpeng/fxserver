@@ -17,32 +17,45 @@
 #include <boost/noncopyable.hpp>
 
 #include "fxbuffer.h"
+#include "fxconnection.h"
 #include "fx_timer_mgr.h"
+
+typedef boost::function<void(FXConnectionPtr&) > MessageCallback;
+typedef boost::function<void(FXConnectionPtr&) > ConnectionCallback;
 
 class FXServer : boost::noncopyable
 {
     public:
         FXServer();
         ~FXServer();
+        void SetConnectionCallback(const ConnectionCallback & cb);
+        void SetMessageCallback(const MessageCallback & cb);
         int Init(int port);
         void Run();
 
+        void CloseConnection(int fd);
+
+        void NotifyWriteEvents(int fd);
+        void IgnoreWriteEvents(int fd);
+
+    private:
         void OnConnect(int fd);
         void OnMessage(int fd);
         void OnWritable(int fd);
         void OnClose(int fd);
 
-    private:
         void SetNonblocking(int fd);
-        void NotifyWritable(int fd);
-        void NotifyReadable(int fd);
+        void UpdateEvents( int fd, uint32_t events );
 
     private:
         static const int max_fd_count = 100;
         FXTimerMgr timer_mgr_;
-        std::map<int, FXBuffer > buf_map_;
+        std::map<int, FXConnectionPtr > conn_map_;
         int listen_fd_;
         int epoll_fd_;
+
+        ConnectionCallback conn_cb_;
+        MessageCallback msg_cb_;
 };
 
 #endif   /* ----- #ifndef __FXSERVER_H__----- */

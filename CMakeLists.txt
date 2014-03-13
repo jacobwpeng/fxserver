@@ -25,6 +25,7 @@ LIST(APPEND SERVER_SRC_LIST src/fxserver.cc
                             src/fxbuffer.cc 
                             src/fxtimer.cc 
                             src/fx_timer_mgr.cc
+                            src/fxconnection.cc
                             src/main.cc
                             )
 

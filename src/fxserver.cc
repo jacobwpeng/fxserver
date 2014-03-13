@@ -21,20 +21,11 @@
 #include <boost/typeof/typeof.hpp>
 #include <boost/optional.hpp>
 #include <boost/bind.hpp>
+#include <boost/make_shared.hpp>
 #include <glog/logging.h>
 
 #include "fxutils.hpp"
 #include "fxserver.h"
-
-namespace detail
-{
-    void timer_call_back(unsigned val)
-    {
-        //LOG(INFO) << "in callback, val=" << val;
-    }
-
-    static const unsigned interval = 1000;       /* in milliseconds */
-}
 
 FXServer::FXServer()
 {
@@ -44,6 +35,15 @@ FXServer::FXServer()
 FXServer::~FXServer()
 {
 
+}
+
+void FXServer::SetConnectionCallback(const ConnectionCallback & cb)
+{
+    conn_cb_ = cb;
+}
+void FXServer::SetMessageCallback(const MessageCallback & cb)
+{
+    msg_cb_ = cb;
 }
 
 int FXServer::Init(int port)
@@ -90,7 +90,6 @@ int FXServer::Init(int port)
         return ret;
     }
 
-    timer_mgr_.RunAfter( detail::interval, boost::bind(detail::timer_call_back, 0) );
     return 0;
 }
 
@@ -98,6 +97,8 @@ void FXServer::Run()
 {
     assert( this->epoll_fd_ != 0 );
     assert( this->listen_fd_ != 0 );
+    assert( this->msg_cb_ );
+    assert( this->conn_cb_ );
     LOG(INFO) << "epoll fd=" << epoll_fd_
         << ", listen_fd=" << listen_fd_;
 
@@ -115,12 +116,11 @@ void FXServer::Run()
     epoll_event events[max_events];
     sockaddr_in clt_addr;
     const int len = sizeof(clt_addr);
-    unsigned times = 0;
 
-    uint64_t last_wakeup_time = 0;
     while(1)
     {
         int nfds = epoll_wait(epoll_fd_, events, max_events, time_to_sleep);
+        LOG(INFO) << "epoll_wait return " << nfds;
         if( nfds < 0 )
         {
             LOG(ERROR) << "epoll_wait failed, ret="
@@ -131,20 +131,7 @@ void FXServer::Run()
         }
         else if( nfds == 0 )
         {
-            if( 0 != timer_mgr_.TriggerExpiredTimers( NowInMilliSeconds() ) )
-            {
-                uint64_t now = NowInMilliSeconds();
-                if( last_wakeup_time != 0 )
-                {
-                    /* 
-                    LOG(INFO) << "sleep time = " << (now-last_wakeup_time)
-                        << ", time_to_sleep = " << time_to_sleep;
-                        */
-                    std::cerr << "delta = " << ( now - last_wakeup_time ) << '\n';
-                }
-                last_wakeup_time = now;
-                timer_mgr_.RunAfter( detail::interval, boost::bind(detail::timer_call_back, ++times) );
-            }
+            timer_mgr_.TriggerExpiredTimers( NowInMilliSeconds() );
         }
         else
         {
@@ -190,20 +177,52 @@ void FXServer::OnConnect(int fd)
     ev.events = EPOLLIN;
     epoll_ctl(epoll_fd_, EPOLL_CTL_ADD, fd, &ev);
 
+    FXConnectionPtr conn = boost::make_shared<FXConnection>(fd, this);
+    this->conn_map_.insert( std::make_pair(fd, conn) );
+    /* connection callback */
+    /* this->connection_callback_(conn); */
+    conn_cb_(conn);
+
     LOG(INFO) << "new connection, fd=" << fd;
+}
+
+void FXServer::CloseConnection(int fd)
+{
+    BOOST_AUTO(iter, conn_map_.find(fd) );
+    assert( iter != conn_map_.end() );
+
+    if( iter->second->WriteBuffer().BytesToRead() != 0 ) /* still got something to write */
+    {
+        shutdown(fd, SHUT_RD);
+        epoll_event ev;
+        ev.data.fd = fd;
+        ev.events = EPOLLOUT;
+
+        epoll_ctl(epoll_fd_, EPOLL_CTL_MOD, fd, &ev);
+        LOG(INFO) << "SHUT_RD";
+    }
+    else
+    {
+        this->OnClose(fd);
+    }
 }
 
 void FXServer::OnMessage(int fd)
 {
     LOG(INFO) << "OnMessage fd=" << fd;
+    BOOST_AUTO(iter, conn_map_.find(fd) );
+    assert( iter != conn_map_.end() );
+    
+    FXConnectionPtr & conn = iter->second;
+
     int nread = 0;
     const size_t buf_size = 1 << 20;
-    char buf[buf_size];
-    FXBuffer & internal_buf = this->buf_map_[fd];
+    char local_buf[buf_size];
+    FXBuffer * buf = conn->MutableReadBuffer();
+    buf->Clear();
     do
     {
-        nread = recv(fd, &buf, buf_size-1, 0);
-        LOG(INFO) << "recv return " << nread ;
+        nread = recv(fd, local_buf, buf_size-1, 0);
         if( nread < 0 )
         {
             if( errno != EAGAIN )
@@ -215,7 +234,6 @@ void FXServer::OnMessage(int fd)
             }
             else
             {
-                LOG(INFO) << "Get EAGAIN";
                 break;
             }
         }
@@ -226,46 +244,50 @@ void FXServer::OnMessage(int fd)
         }
         else
         {
-            LOG(INFO) << "read " << nread << " bytes.";
-            internal_buf.Append( buf, nread );
+            buf->Append( local_buf, nread );
         }
     }while(nread > 0);
-    LOG(INFO) << "out loop";
-    if( internal_buf.BytesToRead() != 0 )
-        this->NotifyWritable(fd);
+    /* message callback */
+    /* this->message_cb_(conn); */
+    msg_cb_(conn);
 }
 
 void FXServer::OnWritable(int fd)
 {
-    FXBuffer & internal_buf = this->buf_map_[fd];
-    assert( internal_buf.BytesToRead() != 0 );
+    BOOST_AUTO(iter, conn_map_.find(fd) );
+    FXConnectionPtr & conn = iter->second;
 
-    LOG(INFO) << "try send " << internal_buf.BytesToRead() << " bytes to client, fd=" << fd;
-    int ret = send(fd, internal_buf.Read(), internal_buf.BytesToRead(), 0);
+    int ret = send(fd, conn->WriteBuffer().Read(), conn->WriteBuffer().BytesToRead(), 0);
     if( ret < 0 )
     {
         LOG(ERROR) << "send failed, ret=" << ret << ", msg=[" << strerror(errno) << "]";
         exit(-2);
     }
-    LOG(INFO) << "send return " << ret;
-    internal_buf.Clear();
-    this->NotifyReadable(fd);
+    if( conn->connected() == false ) { this->OnClose(conn->FileDescriptor() ); }
+    else conn->IgnoreWriteEvents();
 }
 
 void FXServer::OnClose(int fd)
 {
-    LOG(INFO) << "client disconnected, fd=" << fd;
     epoll_event ev;
     ev.data.fd = fd;
 
     epoll_ctl(epoll_fd_, EPOLL_CTL_DEL, fd, &ev);
     close(fd);
 
-    BOOST_AUTO(iter, this->buf_map_.find(fd) );
-    if( iter != this->buf_map_.end() )
-    {
-        this->buf_map_.erase(iter);
-    }
+    BOOST_AUTO(iter, conn_map_.find(fd) );
+    assert( iter != conn_map_.end() );
+
+    conn_map_.erase(iter);
+}
+
+void FXServer::UpdateEvents(int fd, uint32_t events)
+{
+    epoll_event ev;
+    ev.data.fd = fd;
+    ev.events = events;
+
+    epoll_ctl(epoll_fd_, EPOLL_CTL_MOD, fd, &ev);
 }
 
 void FXServer::SetNonblocking(int fd)
@@ -285,20 +307,12 @@ void FXServer::SetNonblocking(int fd)
     }
 }
 
-void FXServer::NotifyWritable(int fd)
+void FXServer::NotifyWriteEvents(int fd)
 {
-    epoll_event ev;
-    ev.data.fd = fd;
-    ev.events = EPOLLOUT;
-
-    epoll_ctl(epoll_fd_, EPOLL_CTL_MOD, fd, &ev);
+    this->UpdateEvents(fd, EPOLLIN | EPOLLOUT);
 }
 
-void FXServer::NotifyReadable(int fd)
+void FXServer::IgnoreWriteEvents(int fd)
 {
-    epoll_event ev;
-    ev.data.fd = fd;
-    ev.events = EPOLLIN;
-
-    epoll_ctl(epoll_fd_, EPOLL_CTL_MOD, fd, &ev);
+    this->UpdateEvents(fd, EPOLLIN);
 }
