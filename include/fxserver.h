@@ -12,14 +12,6 @@
 #ifndef  __FXSERVER_H__
 #define  __FXSERVER_H__
 
-#include <map>
-#include <boost/function.hpp>
-#include <boost/noncopyable.hpp>
-
-#include "fxbuffer.h"
-#include "fxconnection.h"
-#include "fx_timer_mgr.h"
-
 typedef boost::function<void(FXConnectionPtr&) > MessageCallback;
 typedef boost::function<void(FXConnectionPtr&) > ConnectionCallback;
 

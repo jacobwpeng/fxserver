@@ -12,9 +12,6 @@
 #ifndef  __FXTIMER_H__
 #define  __FXTIMER_H__
 
-#include <stdint.h>
-#include <boost/function.hpp>
-
 class FXTimer
 {
     public:

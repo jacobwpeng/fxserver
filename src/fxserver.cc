@@ -9,22 +9,14 @@
  * =====================================================================================
  */
 
-#include <sys/epoll.h>
-#include <sys/socket.h>
-#include <sys/types.h>
-#include <sys/time.h>
-#include <netinet/in.h>
-#include <fcntl.h>
-#include <cassert>
-#include <algorithm>
-#include <iostream>
-#include <boost/typeof/typeof.hpp>
-#include <boost/optional.hpp>
-#include <boost/bind.hpp>
-#include <boost/make_shared.hpp>
-#include <glog/logging.h>
+#include "fx_predefine.h"
 
-#include "fxutils.hpp"
+#include "fxutils.h"
+#include "fxbuffer.h"
+#include "fxconnection.h"
+#include "fxtimer.h"
+#include "fx_timer_mgr.h"
+
 #include "fxserver.h"
 
 FXServer::FXServer()
@@ -99,8 +91,6 @@ void FXServer::Run()
     assert( this->listen_fd_ != 0 );
     assert( this->msg_cb_ );
     assert( this->conn_cb_ );
-    LOG(INFO) << "epoll fd=" << epoll_fd_
-        << ", listen_fd=" << listen_fd_;
 
     timer_mgr_.Run();
 
@@ -120,7 +110,6 @@ void FXServer::Run()
     while(1)
     {
         int nfds = epoll_wait(epoll_fd_, events, max_events, time_to_sleep);
-        LOG(INFO) << "epoll_wait return " << nfds;
         if( nfds < 0 )
         {
             LOG(ERROR) << "epoll_wait failed, ret="
@@ -183,7 +172,6 @@ void FXServer::OnConnect(int fd)
     /* this->connection_callback_(conn); */
     conn_cb_(conn);
 
-    LOG(INFO) << "new connection, fd=" << fd;
 }
 
 void FXServer::CloseConnection(int fd)
@@ -199,7 +187,6 @@ void FXServer::CloseConnection(int fd)
         ev.events = EPOLLOUT;
 
         epoll_ctl(epoll_fd_, EPOLL_CTL_MOD, fd, &ev);
-        LOG(INFO) << "SHUT_RD";
     }
     else
     {
@@ -209,7 +196,6 @@ void FXServer::CloseConnection(int fd)
 
 void FXServer::OnMessage(int fd)
 {
-    LOG(INFO) << "OnMessage fd=" << fd;
     BOOST_AUTO(iter, conn_map_.find(fd) );
     assert( iter != conn_map_.end() );
     

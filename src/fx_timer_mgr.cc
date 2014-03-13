@@ -9,13 +9,12 @@
  * =====================================================================================
  */
 
+#include "fx_predefine.h"
+
+#include "fxutils.h"
+
+#include "fxtimer.h"
 #include "fx_timer_mgr.h"
-#include <sys/time.h>
-#include <boost/foreach.hpp>
-#include <boost/optional.hpp>
-#include <boost/typeof/typeof.hpp>
-#include <glog/logging.h>
-#include "fxutils.hpp"
 
 FXTimerMgr::FXTimerMgr()
     :current_id_(0), started_(false)

@@ -8,7 +8,7 @@
  *
  * =====================================================================================
  */
-
+#include "fx_predefine.h"
 #include "fxtimer.h"
 
 FXTimer::FXTimer(TimerId id, uint64_t trigger_time, TimerCallback cb)

@@ -9,8 +9,14 @@
  * =====================================================================================
  */
 
-#include "fxserver.h"
+#include "fx_predefine.h"
+
+#include "fxbuffer.h"
 #include "fxconnection.h"
+#include "fxtimer.h"
+#include "fx_timer_mgr.h"
+
+#include "fxserver.h"
 
 FXConnection::FXConnection(int fd, FXServer * server)
     :fd_(fd), server_(server)
@@ -46,6 +52,21 @@ void FXConnection::Close()
 {
     this->connected_ = false;
     this->server_->CloseConnection(fd_);
+}
+
+std::string FXConnection::PeerAddress()
+{
+    if( peer_addr_.empty() )
+    {
+        sockaddr_in sa;
+        socklen_t len = sizeof(sa);
+        if( 0 == getpeername(fd_, (struct sockaddr *)&sa, &len) )
+        {
+            this->peer_addr_ = (boost::format("%s:%d") % inet_ntoa(sa.sin_addr) % ntohs(sa.sin_port)).str();
+        }
+    }
+
+    return peer_addr_;
 }
 
 void FXConnection::NotifyWriteEvents()

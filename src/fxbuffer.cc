@@ -9,9 +9,7 @@
  * =====================================================================================
  */
 
-#include <cassert>
-#include <algorithm>
-#include <glog/logging.h>
+#include "fx_predefine.h"
 #include "fxbuffer.h"
 
 FXBuffer::FXBuffer(size_t reserved_size)
@@ -42,6 +40,13 @@ size_t FXBuffer::BytesToRead() const
 {
     assert( write_index_ >= read_index_ );
     return write_index_ - read_index_;
+}
+
+std::string FXBuffer::ReadAndClear()
+{
+    std::string msg( this->Read(), this->BytesToRead() );
+    this->Clear();
+    return msg;
 }
 
 const char * FXBuffer::Begin() const

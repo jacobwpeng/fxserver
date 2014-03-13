@@ -12,13 +12,6 @@
 #ifndef  __FX_TIMER_MGR_H__
 #define  __FX_TIMER_MGR_H__
 
-#include "fxtimer.h"
-#include <map>
-#include <vector>
-#include <boost/shared_ptr.hpp>
-#include <boost/weak_ptr.hpp>
-#include <boost/optional/optional_fwd.hpp>
-
 typedef FXTimer::TimerId TimerId;
 typedef FXTimer::TimerCallback TimerCallback;
 typedef boost::shared_ptr<FXTimer> FXTimerSharedPtr;

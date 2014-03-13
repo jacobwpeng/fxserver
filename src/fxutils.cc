@@ -1,30 +1,26 @@
 /*
  * =====================================================================================
- *       Filename:  fxutils.hpp
- *        Created:  12:19:00 Mar 11, 2014
+ *       Filename:  fxutils.cc
+ *        Created:  11:22:59 Mar 13, 2014
  *         Author:  jacobwpeng
  *          Email:  jacobwpeng@tencent.com
- *    Description:  utils for fx framework
+ *    Description:  utilities implement
  *
  * =====================================================================================
  */
 
-#ifndef  __FXUTILS_H__
-#define  __FXUTILS_H__
+#include "fx_predefine.h"
 
-#include <sys/time.h>
+#include "fxutils.h"
 
-inline uint64_t Timeval2Milliseconds(timeval tv)
+uint64_t Timeval2Milliseconds(timeval tv)
 {
     return static_cast<uint64_t>(tv.tv_sec) * 1000 + (tv.tv_usec / 1000);
 }
 
-inline uint64_t NowInMilliSeconds()
+uint64_t NowInMilliSeconds()
 {
     timeval now;
     gettimeofday(&now, NULL);
     return Timeval2Milliseconds(now);
 }
-
-#endif   /* ----- #ifndef __FXUTILS_H__----- */
-

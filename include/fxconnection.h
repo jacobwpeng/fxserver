@@ -12,10 +12,6 @@
 #ifndef  __FXCONNECTION_H__
 #define  __FXCONNECTION_H__
 
-#include <boost/shared_ptr.hpp>
-#include <boost/noncopyable.hpp>
-#include "fxbuffer.h"
-
 class FXServer;
 
 class FXConnection : boost::noncopyable
@@ -31,17 +27,20 @@ class FXConnection : boost::noncopyable
         int Write(const char * ptr, size_t len);
         void Close();
 
-        void NotifyWriteEvents();
-        void IgnoreWriteEvents();
+        std::string PeerAddress();
 
         const FXBuffer & ReadBuffer();
         const FXBuffer & WriteBuffer();
         FXBuffer * MutableReadBuffer();
         FXBuffer * MutableWriteBuffer();
 
+        void NotifyWriteEvents();
+        void IgnoreWriteEvents();
+
     private:
         int fd_;
         bool connected_;
+        std::string peer_addr_;
         FXServer * server_;
         FXBuffer read_buffer_;
         FXBuffer write_buffer_;

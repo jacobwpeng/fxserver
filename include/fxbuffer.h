@@ -12,8 +12,6 @@
 #ifndef  __FXBUFFER_H__
 #define  __FXBUFFER_H__
 
-#include <vector>
-
 class FXBuffer
 {
     public:
@@ -34,6 +32,8 @@ class FXBuffer
         const char * Begin() const;
         const char * Read() const;
         size_t BytesToRead() const;
+
+        std::string ReadAndClear();
 
     private:
         static const size_t BUFFER_INCREASE_STEP = 1 << 20;
