@@ -19,7 +19,7 @@
 #include "fxserver.h"
 
 FXConnection::FXConnection(int fd, FXServer * server)
-    :fd_(fd), server_(server)
+    :fd_(fd), server_(server), connected_(true)
 {
 
 }
