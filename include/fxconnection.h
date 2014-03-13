@@ -25,9 +25,14 @@ class FXConnection : boost::noncopyable
         int FileDescriptor() const;
         int Write(const char * ptr);
         int Write(const char * ptr, size_t len);
+        int Write(const std::string& msg);
         void Close();
 
         std::string PeerAddress();
+        std::string PeerIp();
+        uint16_t PeerPort();
+
+        FXServer * Server();
 
         const FXBuffer & ReadBuffer();
         const FXBuffer & WriteBuffer();

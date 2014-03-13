@@ -20,6 +20,7 @@ class FXTimer
         ~FXTimer();
         void Trigger();
         TimerId Id() const;
+        uint64_t ExpireTime() const;
 
     private:
         FXTimer(TimerId id, uint64_t trigger_time, TimerCallback cb);

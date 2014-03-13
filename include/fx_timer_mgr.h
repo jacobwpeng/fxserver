@@ -31,10 +31,13 @@ class FXTimerMgr
         void AdjustAllTimers();
 
         uint64_t current_id_;
-        std::map<TimerId, FXTimerWeakPtr> id_to_timer_;
-        std::map<uint64_t, std::vector<FXTimerSharedPtr> > time_to_timer_;
+        typedef std::map<TimerId, FXTimerWeakPtr> Id2TimerMap;
+        typedef std::map<uint64_t, std::vector<FXTimerSharedPtr> > Time2TimersMap;
+        Id2TimerMap id_to_timer_;
+        Time2TimersMap time_to_timer_;
 
         bool started_;
+        bool swapping_timers_;
 };
 
 #endif   /* ----- #ifndef __FX_TIMER_MGR_H__----- */

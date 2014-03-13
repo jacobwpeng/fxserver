@@ -17,7 +17,7 @@
 #include "fx_timer_mgr.h"
 
 FXTimerMgr::FXTimerMgr()
-    :current_id_(0), started_(false)
+    :current_id_(0), started_(false), swapping_timers_(false)
 {
 
 }
@@ -31,28 +31,32 @@ void FXTimerMgr::Run()
 unsigned FXTimerMgr::TriggerExpiredTimers(uint64_t now)
 {
     assert( started_ = true );
-    BOOST_AUTO(e, time_to_timer_.upper_bound(now) );
-    BOOST_AUTO(iter, time_to_timer_.begin() );
 
+    Time2TimersMap tmp;
+    Time2TimersMap::iterator iter;
+    Time2TimersMap::iterator e;
     std::vector<uint64_t> keys_to_remove;
-
-    unsigned num = 0;
-
-    while( iter != e )
+    for( iter = time_to_timer_.begin(), e = time_to_timer_.upper_bound(now); iter != e; ++iter )
     {
-        BOOST_FOREACH(FXTimerSharedPtr& ptr_timer, iter->second)
-        {
-            ++num;
-            ptr_timer->Trigger();
-            id_to_timer_.erase( ptr_timer->Id() );
-        }
         keys_to_remove.push_back( iter->first );
-        ++iter;
+        tmp[iter->first].swap( iter->second );
     }
 
     BOOST_FOREACH(uint64_t key, keys_to_remove)
     {
         time_to_timer_.erase(key);
+    }
+
+    unsigned num = 0;
+
+    for( iter = tmp.begin(), e = tmp.end(); iter != e; ++iter )
+    {
+        BOOST_FOREACH(const FXTimerSharedPtr& ptr_timer, iter->second)
+        {
+            ptr_timer->Trigger();
+            ++num;
+            id_to_timer_.erase( ptr_timer->Id() );
+        }
     }
 
     return num;
@@ -85,7 +89,8 @@ void FXTimerMgr::AdjustAllTimers()
 
 TimerId FXTimerMgr::RunAfter(uint64_t milliseconds, TimerCallback cb)
 {
-    uint64_t trigger_time = NowInMilliSeconds() + milliseconds;
+    uint64_t now = NowInMilliSeconds();
+    uint64_t trigger_time = now + milliseconds;
     TimerId id = current_id_;
     uint64_t timer_time = started_ ? trigger_time : milliseconds;
 

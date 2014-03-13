@@ -15,19 +15,48 @@
 #include "fxconnection.h"
 #include "fxtimer.h"
 #include "fx_timer_mgr.h"
+#include "fxutils.h"
 #include "fxserver.h"
 
-void MyMessageCallback( FXConnectionPtr & conn )
+static const unsigned interval = 1000;
+
+
+using std::string;
+using std::vector;
+
+void MyTimerCallback( const FXConnectionPtr & conn, const string& msg )
 {
-    std::string msg;
-    LOG(INFO) << "read from client, addr=[" << conn->PeerAddress() << "], msg=[" << msg << "]";
-    conn->Write("Not in Service\n");
-    conn->Close();
+    conn->Write(msg);
+    conn->Server()->TimerManager().RunAfter(interval, boost::bind(MyTimerCallback, conn, msg) );
 }
 
-void MyConnectionCallback( FXConnectionPtr & conn )
+void MyMessageCallback( const FXConnectionPtr & conn )
 {
-    LOG(INFO) << "New Connection, addr=" << conn->PeerAddress();
+    string msg( conn->MutableReadBuffer()->ReadAndClear() );
+    string key;
+    if( boost::ends_with(msg, "\r\n") )
+    {
+        key = msg.substr( 0, msg.length() - 2 );
+    }
+    LOG(INFO) << "read from client, addr=[" << conn->PeerAddress() << "], msg=[" << msg << "]";
+    if( key == "quit" )
+    {
+        conn->Write("Bye Bye.\r\n");
+        conn->Close();
+    }
+    else if( key == "repeat" )
+    {
+        conn->Server()->TimerManager().RunAfter(interval, boost::bind(MyTimerCallback, conn, msg) );
+    }
+    else
+    {
+        conn->Write(msg);
+    }
+}
+
+void MyConnectionCallback( const FXConnectionPtr & conn )
+{
+    LOG(INFO) << "New Connection, addr=" << conn->PeerAddress() << ", fd = " << conn->FileDescriptor();
 }
 
 int main(int argc, char * argv[])

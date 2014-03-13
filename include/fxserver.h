@@ -12,8 +12,8 @@
 #ifndef  __FXSERVER_H__
 #define  __FXSERVER_H__
 
-typedef boost::function<void(FXConnectionPtr&) > MessageCallback;
-typedef boost::function<void(FXConnectionPtr&) > ConnectionCallback;
+typedef boost::function<void(const FXConnectionPtr&) > MessageCallback;
+typedef boost::function<void(const FXConnectionPtr&) > ConnectionCallback;
 
 class FXServer : boost::noncopyable
 {
@@ -29,6 +29,8 @@ class FXServer : boost::noncopyable
 
         void NotifyWriteEvents(int fd);
         void IgnoreWriteEvents(int fd);
+
+        FXTimerMgr & TimerManager();
 
     private:
         void OnConnect(int fd);

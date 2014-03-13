@@ -41,6 +41,11 @@ int FXConnection::Write(const char * ptr)
     return this->Write( ptr, strlen(ptr) );
 }
 
+int FXConnection::Write(const std::string& msg)
+{
+    return this->Write( msg.c_str(), msg.length() );
+}
+
 int FXConnection::Write(const char * ptr, size_t len)
 {
     this->write_buffer_.Append( ptr, len );
@@ -67,6 +72,11 @@ std::string FXConnection::PeerAddress()
     }
 
     return peer_addr_;
+}
+
+FXServer * FXConnection::Server()
+{
+    return server_;
 }
 
 void FXConnection::NotifyWriteEvents()

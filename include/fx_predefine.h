@@ -53,6 +53,7 @@
 #include <boost/noncopyable.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/typeof/typeof.hpp>
+#include <boost/algorithm/string.hpp>
 
 /*-----------------------------------------------------------------------------
  *  google-glog headers

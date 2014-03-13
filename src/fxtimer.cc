@@ -31,3 +31,8 @@ FXTimer::TimerId FXTimer::Id() const
 {
     return id_;
 }
+
+uint64_t FXTimer::ExpireTime() const
+{
+    return trigger_time_;
+}

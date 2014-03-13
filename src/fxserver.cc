@@ -99,6 +99,7 @@ void FXServer::Run()
     if( opt_latest_time )
     {
         time_to_sleep = opt_latest_time.get() - NowInMilliSeconds();
+        if( time_to_sleep < 0 ) time_to_sleep = 0;
     }
 
     const int max_events = 20;
@@ -147,6 +148,7 @@ void FXServer::Run()
         if( opt_latest_time )
         {
             time_to_sleep = opt_latest_time.get() - NowInMilliSeconds();
+            if( time_to_sleep < 0 ) time_to_sleep = 0;
         }
         else
         {
@@ -250,7 +252,11 @@ void FXServer::OnWritable(int fd)
         exit(-2);
     }
     if( conn->connected() == false ) { this->OnClose(conn->FileDescriptor() ); }
-    else conn->IgnoreWriteEvents();
+    else
+    {
+        conn->IgnoreWriteEvents();
+        conn->MutableWriteBuffer()->Clear();
+    }
 }
 
 void FXServer::OnClose(int fd)
@@ -301,4 +307,9 @@ void FXServer::NotifyWriteEvents(int fd)
 void FXServer::IgnoreWriteEvents(int fd)
 {
     this->UpdateEvents(fd, EPOLLIN);
+}
+
+FXTimerMgr & FXServer::TimerManager()
+{
+    return timer_mgr_;
 }

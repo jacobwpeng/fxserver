@@ -4,7 +4,7 @@ SET(CMAKE_C_COMPILER "gcc")
 SET(CMAKE_CXX_COMPILER "g++")
 PROJECT( fxserver )
 
-SET(CMAKE_CXX_FLAGS "-Wall -Werror -O3")
+SET(CMAKE_CXX_FLAGS "-Wall -Werror")
 
 CHECK_CXX_COMPILER_FLAG("-Wno-unused-local-typedefs" support)
 IF(support)
