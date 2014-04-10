@@ -9,11 +9,12 @@
  * =====================================================================================
  */
 
-#include "fx_event_loop.h"
-#include "fx_acceptor.h"
-
 #include <boost/bind.hpp>
 #include <glog/logging.h>
+
+#include "fx_event_loop.h"
+#include "fx_acceptor.h"
+#include "fx_blocking_queue.hpp"
 
 using namespace fx;
 

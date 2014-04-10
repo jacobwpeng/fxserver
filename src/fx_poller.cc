@@ -26,7 +26,7 @@ namespace fx
 
     Poller::~Poller()
     {
-
+        close( epoll_fd_ );
     }
 
     TimeStamp Poller::Poll(int timeout_ms, ChannelList * active_channels)
