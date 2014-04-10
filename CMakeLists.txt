@@ -4,7 +4,8 @@ SET(CMAKE_C_COMPILER "gcc")
 SET(CMAKE_CXX_COMPILER "g++")
 PROJECT( fxserver )
 
-SET(CMAKE_CXX_FLAGS "-Wall -Werror -O2")
+SET(CMAKE_CXX_FLAGS_DEBUG "-Wall -Werror")
+SET(CMAKE_CXX_FLAGS_RELEASE "-Wall -Werror -DNDEBUG -O3" )
 
 CHECK_CXX_COMPILER_FLAG("-Wno-unused-local-typedefs" support)
 IF(support)
@@ -21,14 +22,15 @@ INCLUDE_DIRECTORIES(include)
 
 FIND_LIBRARY(GLOG "glog")
 FIND_PACKAGE(Boost COMPONENTS REQUIRED system thread)
-LIST(APPEND SERVER_SRC_LIST src/fxserver.cc 
-                            src/fxbuffer.cc 
-                            src/fxtimer.cc 
-                            src/fxutils.cc
-                            src/fx_timer_mgr.cc
-                            src/fxconnection.cc
-                            src/main.cc
-                            )
+LIST(APPEND SERVER_SRC_LIST 
+        src/fx_channel.cc
+        src/fx_poller.cc
+        src/fx_event_loop.cc
+        src/fx_acceptor.cc
+        src/fx_tcp_connection.cc
+        src/fx_buffer.cc
+        src/main.cc
+    )
 
 ADD_EXECUTABLE( ${BIN} ${SERVER_SRC_LIST} )
 TARGET_LINK_LIBRARIES( ${BIN} 
