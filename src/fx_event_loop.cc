@@ -64,23 +64,31 @@ namespace fx
         }
     }
 
-    void EventLoop::RunInLoop( PendingFunctor f )
+    void EventLoop::RunInLoop( const PendingFunctor& f )
     {
-        if( InLoopThread() == false )
-        {
-            boost::mutex::scoped_lock lock(call_functors_mutex_); /* 其它线程塞进来必须加锁 */
-            functors_.push_back( f );
-            WakeUp();
-        }
-        else if( calling_functors_ )
-        {
-            functors_.push_back( f );           /* 自己塞进来的，属于单线程环境，就不加锁了 */
-            WakeUp();
-        }
-        else
+        if( InLoopThread() and calling_functors_ == false )
         {
             f();
         }
+        else
+        {
+            QueueInLoop(f);
+        }
+    }
+
+    void EventLoop::QueueInLoop( const PendingFunctor & f )
+    {
+        if( InLoopThread() )
+        {
+            functors_.push_back( f );
+        }
+        else
+        {
+            boost::mutex::scoped_lock lock(call_functors_mutex_); /* 其它线程塞进来必须加锁 */
+            functors_.push_back( f );
+        }
+
+        if( calling_functors_ || InLoopThread() == false ) WakeUp();
     }
 
     void EventLoop::UpdateChannel(Channel * channel)

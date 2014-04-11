@@ -13,6 +13,7 @@
 
 #include <sys/epoll.h>
 #include "fx_event_loop.h"
+#include <glog/logging.h>
 
 namespace fx
 {
@@ -38,15 +39,16 @@ namespace fx
             if( ecb_ ) ecb_();
         }
 
+        if( revents_ & EPOLLOUT )
+        {
+            if( wcb_ ) wcb_();
+        }
+
         if( revents_ & EPOLLIN )
         {
             if( rcb_ ) rcb_();
         }
 
-        if( revents_ & EPOLLOUT )
-        {
-            if( wcb_ ) wcb_();
-        }
     }
 
     void Channel::Update()

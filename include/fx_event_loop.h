@@ -37,7 +37,8 @@ namespace fx
             void UpdateChannel( Channel * channel );
             void RemoveChannel( Channel * channel );
 
-            void RunInLoop( PendingFunctor f );
+            void RunInLoop( const PendingFunctor & f );
+            void QueueInLoop( const PendingFunctor & f );
 
         private:
             void CallPendingFunctors();

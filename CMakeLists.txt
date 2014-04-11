@@ -29,7 +29,6 @@ LIST(APPEND SERVER_SRC_LIST
         src/fx_acceptor.cc
         src/fx_tcp_connection.cc
         src/fx_buffer.cc
-        #src/fx_event_loop_pool.cc
         src/fx_tcp_server.cc
         src/fx_event_loop_thread.cc
         src/fx_event_loop_thread_pool.cc

@@ -11,6 +11,7 @@
 
 #include "fx_buffer.h"
 #include <cassert>
+#include <cstring>                              /* for memcpy */
 
 namespace fx
 {

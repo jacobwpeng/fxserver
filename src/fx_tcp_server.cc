@@ -16,7 +16,6 @@
 #include <glog/logging.h>
 
 #include "fx_event_loop.h"
-#include "fx_event_loop_pool.h"
 #include "fx_acceptor.h"
 #include "fx_tcp_connection.h"
 #include "fx_buffer.h"
@@ -84,6 +83,6 @@ namespace fx
         TcpConnectionPtr conn = iter->second;
         connections_.erase( iter );
         LOG(INFO) << " conn use_count = " << conn.use_count();
-        conn->loop()->RunInLoop( boost::bind( &TcpConnection::Destroy, conn ) );
+        conn->loop()->QueueInLoop( boost::bind( &TcpConnection::Destroy, conn ) );
     }
 }
