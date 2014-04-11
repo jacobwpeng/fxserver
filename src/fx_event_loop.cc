@@ -51,11 +51,12 @@ namespace fx
         while( 1 )
         {
             TimeStamp now = poller_->Poll( -1, &channels );
+            (void)now;
+
             for( ChannelList::iterator iter = channels.begin(); iter != channels.end(); ++iter )
             {
                 (*iter)->HandleEvents();
             }
-            (void)now;
             channels.clear();
 
             /* 调用pending functors */
@@ -71,9 +72,14 @@ namespace fx
             functors_.push_back( f );
             WakeUp();
         }
-        else
+        else if( calling_functors_ )
         {
             functors_.push_back( f );           /* 自己塞进来的，属于单线程环境，就不加锁了 */
+            WakeUp();
+        }
+        else
+        {
+            f();
         }
     }
 

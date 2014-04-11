@@ -16,6 +16,7 @@
 #include <string>
 #include <boost/scoped_ptr.hpp>
 #include <boost/shared_ptr.hpp>
+#include <boost/function.hpp>
 
 #include "fx_channel.h"
 
@@ -24,6 +25,7 @@ namespace fx
     class Channel;
     class EventLoop;
     class TcpConnection;
+    typedef boost::function< void(int) > NewConnectionCallback;
     typedef boost::shared_ptr<TcpConnection> TcpConnectionPtr;
     typedef std::map<int, TcpConnectionPtr> TcpConnectionMap;
     class Acceptor
@@ -32,20 +34,20 @@ namespace fx
             Acceptor(EventLoop * loop);
             ~Acceptor();
 
+            void set_new_connection_callback( NewConnectionCallback nccb );
             void BindOrAbort(const std::string& addr, int port);       /* TODO : 使用封装结构传递地址 */
             void Listen();
 
         private:
             void NewConnetion();
             void SetNonblocking(int fd);
-            void OnCloseConnection(int fd);
 
         private:
             EventLoop * loop_;
             int listen_fd_;
             boost::scoped_ptr<Channel> listen_channel_;
-            ChannelList channels_;
             TcpConnectionMap connections_;
+            NewConnectionCallback nccb_;
     };
 }
 

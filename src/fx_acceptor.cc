@@ -24,17 +24,6 @@
 #include "fx_channel.h"
 #include "fx_tcp_connection.h"
 
-namespace detail
-{
-    void ReadCallback( fx::TcpConnectionPtr conn, fx::Buffer * buf )
-    {
-        std::string content = buf->ReadAndClear();
-        LOG(INFO) << " buf ByteSize = " << buf->ByteSize();
-        LOG(INFO) << "read from peer [" << content << "]";
-        conn->Write( content );
-    }
-}
-
 namespace fx
 {
     Acceptor::Acceptor(EventLoop * loop)
@@ -45,7 +34,12 @@ namespace fx
 
     Acceptor::~Acceptor()
     {
-        close( listen_channel_->fd() );
+        if( listen_channel_ ) close( listen_channel_->fd() );
+    }
+
+    void Acceptor::set_new_connection_callback( NewConnectionCallback nccb )
+    {
+        nccb_ = nccb;
     }
 
     void Acceptor::BindOrAbort(const std::string& addr, int port)
@@ -73,7 +67,6 @@ namespace fx
     void Acceptor::Listen()
     {
         PCHECK( listen(listen_fd_, SOMAXCONN) >= 0 ) << "listen failed!";
-
         listen_channel_.reset( new Channel(loop_, listen_fd_) );
         listen_channel_->EnableReading();
 
@@ -86,17 +79,11 @@ namespace fx
         sockaddr_in clt_addr;
         const int len = sizeof(clt_addr);
         int client_fd = accept(listen_fd_, (sockaddr *)&clt_addr, (unsigned*)&len );
+        SetNonblocking( client_fd );
 
         LOG(INFO) << "New Connection, fd = " << client_fd;
 
-        SetNonblocking( client_fd );
-        TcpConnectionPtr conn = boost::make_shared<TcpConnection>(loop_, client_fd);
-        conn->set_read_callback( detail::ReadCallback );
-        conn->set_close_callback( boost::bind(&Acceptor::OnCloseConnection, this, _1) );
-
-        assert( connections_.find( client_fd ) == connections_.end() );
-
-        connections_[client_fd] = conn;
+        if( nccb_ ) nccb_(client_fd);
     }
 
     void Acceptor::SetNonblocking(int fd)
@@ -106,14 +93,5 @@ namespace fx
 
         opts = opts | O_NONBLOCK;
         PCHECK( fcntl(fd, F_SETFL, opts) >= 0 ) << "set opts failed!";
-    }
-
-    void Acceptor::OnCloseConnection(int fd)
-    {
-        TcpConnectionMap::iterator iter = connections_.find( fd );
-        assert( iter != connections_.end() );
-        LOG(INFO) << "remove conn from connections, fd = " << fd;
-        loop_->RunInLoop( boost::bind( &TcpConnection::Destroy, iter->second ) );
-        connections_.erase( iter );
     }
 }

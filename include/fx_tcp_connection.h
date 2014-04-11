@@ -46,6 +46,7 @@ namespace fx
             void Destroy();
 
             bool closed() const { return closed_; }
+            EventLoop * loop() { return loop_; }
 
         private:
             void ReadFromPeer();

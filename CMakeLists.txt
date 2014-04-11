@@ -4,7 +4,7 @@ SET(CMAKE_C_COMPILER "gcc")
 SET(CMAKE_CXX_COMPILER "g++")
 PROJECT( fxserver )
 
-SET(CMAKE_CXX_FLAGS_DEBUG "-Wall -Werror")
+SET(CMAKE_CXX_FLAGS_DEBUG "-Wall -Werror -ggdb")
 SET(CMAKE_CXX_FLAGS_RELEASE "-Wall -Werror -DNDEBUG -O3" )
 
 CHECK_CXX_COMPILER_FLAG("-Wno-unused-local-typedefs" support)
@@ -29,6 +29,10 @@ LIST(APPEND SERVER_SRC_LIST
         src/fx_acceptor.cc
         src/fx_tcp_connection.cc
         src/fx_buffer.cc
+        #src/fx_event_loop_pool.cc
+        src/fx_tcp_server.cc
+        src/fx_event_loop_thread.cc
+        src/fx_event_loop_thread_pool.cc
         src/main.cc
     )
 

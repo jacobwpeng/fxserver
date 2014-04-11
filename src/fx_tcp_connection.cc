@@ -27,11 +27,13 @@ namespace fx
         channel_.reset( new Channel(loop, fd) );
         channel_->set_read_callback( boost::bind( &TcpConnection::ReadFromPeer, this ) );
         channel_->set_write_callback( boost::bind( &TcpConnection::WriteToPeer, this ) );
-        channel_->EnableReading();
+
+        loop_->RunInLoop( boost::bind( &Channel::EnableReading, channel_.get() ) );
     }
 
     TcpConnection::~TcpConnection()
     {
+        LOG(INFO) << __FUNCTION__;
         close(fd_);
     }
 
@@ -67,12 +69,12 @@ namespace fx
     {
         assert( closed_ );
         loop_->AssertInLoopThread();
-        assert( shared_from_this().use_count() == 2 ); /* 一个正在调用这个方法， 另外一个是临时变量 */
+        LOG(INFO) << "conn use_count = " << shared_from_this().use_count();
     }
 
     void TcpConnection::ReadFromPeer()
     {
-        char buf[ 1 << 20 ];                    /* 64K stack buf */
+        char buf[ 1 << 16 ];                    /* 64K stack buf */
         const int iovcnt = 2;
         iovec iov[iovcnt];
 
