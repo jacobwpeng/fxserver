@@ -35,7 +35,7 @@ int main(int argc, char * argv[])
 {
     google::InitGoogleLogging(argv[0]);
     const size_t thread_count = 4;
-    (void)thread_count;
+    (void)argc;
 
     EventLoop loop;
 

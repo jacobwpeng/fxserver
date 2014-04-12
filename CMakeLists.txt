@@ -4,8 +4,8 @@ SET(CMAKE_C_COMPILER "gcc")
 SET(CMAKE_CXX_COMPILER "g++")
 PROJECT( fxserver )
 
-SET(CMAKE_CXX_FLAGS_DEBUG "-Wall -Werror -ggdb")
-SET(CMAKE_CXX_FLAGS_RELEASE "-Wall -Werror -DNDEBUG -O3" )
+SET(CMAKE_CXX_FLAGS_DEBUG "-Wall -Wextra -Werror -Wno-unused-variable -ggdb")
+SET(CMAKE_CXX_FLAGS_RELEASE "-Wall -Wextra -Werror -Wno-unused-variable -DNDEBUG -O3" )
 
 CHECK_CXX_COMPILER_FLAG("-Wno-unused-local-typedefs" support)
 IF(support)

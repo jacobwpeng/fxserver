@@ -115,7 +115,6 @@ namespace fx
     {
         LOG(INFO) << "WriteToPeer";
         size_t bytes_to_read = write_buf_.BytesToRead();
-        assert( bytes_to_read >= 0 );
 
         while( bytes_to_read )
         {
