@@ -10,6 +10,7 @@
  */
 
 #include <boost/bind.hpp>
+#include <boost/lexical_cast.hpp>
 #include <glog/logging.h>
 
 #include "fx_event_loop.h"
@@ -33,13 +34,18 @@ void ThreadFunc(int port)
 
 int main(int argc, char * argv[])
 {
+    if( argc != 2 )
+    {
+        return -1;
+    }
     google::InitGoogleLogging(argv[0]);
     const size_t thread_count = 4;
-    (void)argc;
 
     EventLoop loop;
 
-    TcpServer s( &loop, "0.0.0.0", 9026 );
+    int port = boost::lexical_cast<int>( argv[1] );
+
+    TcpServer s( &loop, "0.0.0.0", port );
     s.SetThreadNum( thread_count );
     s.Start();
 
