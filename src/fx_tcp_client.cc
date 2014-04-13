@@ -46,6 +46,7 @@ namespace fx
         TcpConnectionState state = connected ? kConnected : kConnecting; 
         TcpConnectionPtr conn = boost::make_shared<TcpConnection>( loop_, fd, state );
         conn->set_read_callback( rcb_ );
+        conn->set_close_callback( boost::bind( &TcpClient::OnCloseConnection, this, _1) );
 
         connections_[fd] = conn;
 
@@ -62,5 +63,15 @@ namespace fx
         assert( connections_.find(fd) != connections_.end() );
 
         if( ccb_ ) ccb_(conn);
+    }
+
+    void TcpClient::OnCloseConnection( int fd )
+    {
+        TcpConnectionMap::iterator iter = connections_.find(fd);
+        assert( iter != connections_.end() );
+        TcpConnectionPtr conn = iter->second;
+
+        connections_.erase(iter);
+        conn->loop()->QueueInLoop( boost::bind( &TcpConnection::Destroy, conn ) );
     }
 }

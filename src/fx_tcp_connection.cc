@@ -46,6 +46,7 @@ namespace fx
 
     TcpConnection::~TcpConnection()
     {
+        LOG(INFO) << "TcpConnection Destroyed.";
         close(fd_);
     }
 
@@ -81,7 +82,7 @@ namespace fx
     {
         assert( state_ == kDisconnected );
         loop_->AssertInLoopThread();
-        LOG(INFO) << "conn use_count = " << shared_from_this().use_count();
+        //LOG(INFO) << "conn use_count = " << shared_from_this().use_count();
     }
 
     void TcpConnection::ReadFromPeer()
@@ -99,7 +100,7 @@ namespace fx
         ssize_t bytes_read = readv(fd_, iov, iovcnt);
         LOG_IF( INFO, bytes_read <= 0 ) << " bytes_read = " << bytes_read;
 
-        if( bytes_read == 0 || (bytes_read == -1 && errno == ECONNRESET) )
+        if( bytes_read == 0 || (bytes_read == -1 && errno != EAGAIN) )
         {
             /* 客户端断开连接 */
             Close();
@@ -119,6 +120,7 @@ namespace fx
 
             if( rcb_ ) rcb_( shared_from_this(), &read_buf_ );
         }
+        /* TODO : 可能还没读完？ */
     }
 
     void TcpConnection::WriteToPeer()

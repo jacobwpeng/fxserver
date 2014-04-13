@@ -45,6 +45,7 @@ namespace fx
         private:
             void OnConnect(int fd, bool connected);
             void OnConnected( TcpConnectionPtr conn );
+            void OnCloseConnection( int fd );
 
         private:
             EventLoop * loop_;
