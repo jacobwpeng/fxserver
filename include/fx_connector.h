@@ -1,0 +1,44 @@
+/*
+ * =====================================================================================
+ *
+ *       Filename:  fx_connector.h
+ *        Created:  04/13/2014 11:43:27 AM
+ *         Author:  peng wang
+ *          Email:  pw2191195@gmail.com
+ *    Description:  
+ *
+ * =====================================================================================
+ */
+
+#ifndef  __FX_CONNECTOR__
+#define  __FX_CONNECTOR__
+
+#include <string>
+#include <boost/function.hpp>
+
+namespace fx
+{
+    class EventLoop;
+    typedef boost::function< void(int fd) > ConnectCallback;
+    class Connector
+    {
+        public:
+            Connector(EventLoop * loop);
+            ~Connector();
+
+            void set_connect_callback(ConnectCallback ccb);
+
+            int ConnectTo( const std::string& ip_addr, int port ); /* TODO : 域名解析 */
+            // create fd
+            // set non-blocking
+            // connect
+            // create channel
+            // EnableReading
+
+        private:
+            EventLoop * loop_;
+            ConnectCallback ccb_;
+    };
+}
+
+#endif   /* ----- #ifndef __FX_CONNECTOR__  ----- */
