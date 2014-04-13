@@ -55,7 +55,7 @@ namespace fx
     void TcpServer::OnNewConnection(int fd)
     {
         EventLoop * loop = loop_threads_->NextLoop();
-        TcpConnectionPtr conn = boost::make_shared<TcpConnection>(loop, fd);
+        TcpConnectionPtr conn = boost::make_shared<TcpConnection>(loop, fd, kConnected);
         conn->set_read_callback( boost::bind(&TcpServer::OnRead, this, _1, _2) );
         conn->set_close_callback( boost::bind(&TcpServer::OnConnectionClose, this, _1) );
 

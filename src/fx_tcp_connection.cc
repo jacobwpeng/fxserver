@@ -21,19 +21,30 @@
 
 namespace fx
 {
-    TcpConnection::TcpConnection( EventLoop * loop, int fd )
-        :loop_(loop), fd_(fd), closed_(false)
+    TcpConnection::TcpConnection( EventLoop * loop, int fd, TcpConnectionState state)
+        :loop_(loop), fd_(fd), state_( state )
     {
         channel_.reset( new Channel(loop, fd) );
-        channel_->set_read_callback( boost::bind( &TcpConnection::ReadFromPeer, this ) );
+        if( state_ == kConnecting )
+        {
+            channel_->set_read_callback( boost::bind( &TcpConnection::ConnectedToPeer, this ) );
+        }
+        else if( state_ == kConnecting )
+        {
+            channel_->set_read_callback( boost::bind( &TcpConnection::ReadFromPeer, this ) );
+        }
+        else
+        {
+            assert( false );                    /* 奇怪的构造参数 */
+        }
         channel_->set_write_callback( boost::bind( &TcpConnection::WriteToPeer, this ) );
+        /* TODO : 增加error callback */
 
         loop_->RunInLoop( boost::bind( &Channel::EnableReading, channel_.get() ) );
     }
 
     TcpConnection::~TcpConnection()
     {
-        LOG(INFO) << __FUNCTION__;
         close(fd_);
     }
 
@@ -60,14 +71,14 @@ namespace fx
 
     void TcpConnection::Close()
     {
-        closed_ = true;
+        state_ = kDisconnected;
         channel_->DisableReading();
         if( ccb_ ) ccb_( fd_ );
     }
 
     void TcpConnection::Destroy()
     {
-        assert( closed_ );
+        assert( state_ == kDisconnected );
         loop_->AssertInLoopThread();
         LOG(INFO) << "conn use_count = " << shared_from_this().use_count();
     }
@@ -127,5 +138,12 @@ namespace fx
         }
 
         channel_->DisableWriting();
+    }
+
+    void TcpConnection::ConnectedToPeer()
+    {
+        assert( state_ == kConnecting );
+        state_ = kConnected;
+        if( connected_callback_ ) connected_callback_( shared_from_this() );
     }
 }

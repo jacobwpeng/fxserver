@@ -13,7 +13,6 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <arpa/inet.h>
-#include <fcntl.h>
 #include <netinet/in.h>
 
 #include <boost/bind.hpp>
@@ -23,6 +22,7 @@
 #include "fx_event_loop.h"
 #include "fx_channel.h"
 #include "fx_tcp_connection.h"
+#include "fx_socket_op.h"
 
 namespace fx
 {
@@ -61,7 +61,7 @@ namespace fx
 
         PCHECK( bind(listen_fd_, (sockaddr *)(&server_addr), sizeof(server_addr) ) >= 0 ) << "Bind failed!";
 
-        SetNonblocking(listen_fd_);
+        socketop::SetNonblocking(listen_fd_);
     }
 
     void Acceptor::Listen()
@@ -79,19 +79,10 @@ namespace fx
         sockaddr_in clt_addr;
         const int len = sizeof(clt_addr);
         int client_fd = accept(listen_fd_, (sockaddr *)&clt_addr, (unsigned*)&len );
-        SetNonblocking( client_fd );
+        socketop::SetNonblocking( client_fd );
 
         LOG(INFO) << "New Connection, fd = " << client_fd;
 
         if( nccb_ ) nccb_(client_fd);
-    }
-
-    void Acceptor::SetNonblocking(int fd)
-    {
-        int opts;
-        PCHECK( (opts = fcntl(fd, F_GETFL)) >= 0 ) << "get opts failed!" ;
-
-        opts = opts | O_NONBLOCK;
-        PCHECK( fcntl(fd, F_SETFL, opts) >= 0 ) << "set opts failed!";
     }
 }

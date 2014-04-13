@@ -26,18 +26,27 @@ namespace fx
     class TcpConnection;
 
     typedef boost::shared_ptr<TcpConnection> TcpConnectionPtr;
+    typedef boost::function< void( TcpConnectionPtr conn ) > TcpConnectionConnectedCallback;
     typedef boost::function< void( TcpConnectionPtr conn, Buffer * buf) > TcpConnectionReadCallback;
     typedef boost::function< void( int ) > TcpConnectionCloseCallback;
+
+    enum TcpConnectionState
+    {
+        kConnecting = 1,
+        kConnected = 2,
+        kDisconnected = 3
+    };
 
     class TcpConnection : boost::noncopyable, public boost::enable_shared_from_this<TcpConnection>
     {
         public:
-            TcpConnection(EventLoop * loop, int fd);
+            TcpConnection(EventLoop * loop, int fd, TcpConnectionState state);
             ~TcpConnection();
 
             void Write( const std::string& content );
             void Write( const char * buf, size_t len );
 
+            void set_connected_callback( TcpConnectionConnectedCallback connected_callback) { connected_callback_ = connected_callback; }
             void set_read_callback( TcpConnectionReadCallback rcb );
             void set_close_callback( TcpConnectionCloseCallback ccb );
             /* 关闭连接，但是不会马上关闭描述符，因为发送缓冲区中可能还有东西没有发 */
@@ -45,20 +54,22 @@ namespace fx
             /* 干掉自己 */
             void Destroy();
 
-            bool closed() const { return closed_; }
+            bool closed() const { return state_ == kDisconnected; }
             EventLoop * loop() { return loop_; }
 
         private:
             void ReadFromPeer();
             void WriteToPeer();
+            void ConnectedToPeer();
 
         private:
             EventLoop * loop_;
             const int fd_;
-            bool closed_;
+            TcpConnectionState state_;
 
             TcpConnectionReadCallback rcb_;
             TcpConnectionCloseCallback ccb_;
+            TcpConnectionConnectedCallback connected_callback_;
             boost::scoped_ptr<Channel> channel_;
             Buffer read_buf_;
             Buffer write_buf_;

@@ -40,7 +40,6 @@ namespace fx
 
         private:
             void NewConnetion();
-            void SetNonblocking(int fd);
 
         private:
             EventLoop * loop_;

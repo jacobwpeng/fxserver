@@ -23,13 +23,15 @@ INCLUDE_DIRECTORIES(include)
 FIND_LIBRARY(GLOG "glog")
 FIND_PACKAGE(Boost COMPONENTS REQUIRED system thread)
 LIST(APPEND SERVER_SRC_LIST 
+        src/fx_socket_op.cc
+        src/fx_buffer.cc
         src/fx_channel.cc
         src/fx_poller.cc
-        src/fx_event_loop.cc
         src/fx_acceptor.cc
+        src/fx_connector.cc
         src/fx_tcp_connection.cc
-        src/fx_buffer.cc
         src/fx_tcp_server.cc
+        src/fx_event_loop.cc
         src/fx_event_loop_thread.cc
         src/fx_event_loop_thread_pool.cc
         src/main.cc
