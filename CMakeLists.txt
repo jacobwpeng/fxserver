@@ -2,7 +2,7 @@ INCLUDE(CheckCXXCompilerFlag)
 CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
 SET(CMAKE_C_COMPILER "gcc")
 SET(CMAKE_CXX_COMPILER "g++")
-PROJECT( fxserver )
+PROJECT( fx )
 
 SET(CMAKE_CXX_FLAGS_DEBUG "-Wall -Wextra -Werror -Wno-unused-variable -ggdb")
 SET(CMAKE_CXX_FLAGS_RELEASE "-Wall -Wextra -Werror -Wno-unused-variable -DNDEBUG -O3" )
@@ -15,14 +15,14 @@ ENDIF()
 SET(CMAKE_FIND_LIBRARY_PREFIXES "lib")
 SET(CMAKE_FIND_LIBRARY_SUFFIXES ".so" ".a")
 
-SET(BIN "fxserver")
+SET(LIBNAME "fx")
 
 INCLUDE_DIRECTORIES(/opt/include)
 INCLUDE_DIRECTORIES(include)
 
 FIND_LIBRARY(GLOG "glog")
 FIND_PACKAGE(Boost COMPONENTS REQUIRED system thread)
-LIST(APPEND SERVER_SRC_LIST 
+LIST(APPEND FX_SRC_LIST 
         src/fx_socket_op.cc
         src/fx_buffer.cc
         src/fx_channel.cc
@@ -34,11 +34,8 @@ LIST(APPEND SERVER_SRC_LIST
         src/fx_event_loop.cc
         src/fx_event_loop_thread.cc
         src/fx_event_loop_thread_pool.cc
-        src/main.cc
+        #src/main.cc
     )
 
-ADD_EXECUTABLE( ${BIN} ${SERVER_SRC_LIST} )
-TARGET_LINK_LIBRARIES( ${BIN} 
-                        ${GLOG} 
-                        ${Boost_LIBRARIES}
-                        )
+ADD_LIBRARY( ${LIBNAME} STATIC ${FX_SRC_LIST} )
+ADD_SUBDIRECTORY( examples )
