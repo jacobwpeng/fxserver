@@ -87,8 +87,8 @@ namespace fx
             boost::mutex::scoped_lock lock(call_functors_mutex_); /* 其它线程塞进来必须加锁 */
             functors_.push_back( f );
         }
-
-        if( calling_functors_ || InLoopThread() == false ) WakeUp();
+        WakeUp();
+        //if( calling_functors_ || InLoopThread() == false ) WakeUp();
     }
 
     void EventLoop::UpdateChannel(Channel * channel)
@@ -138,6 +138,6 @@ namespace fx
     {
         int val;
         PCHECK( read( wakeup_fds_[0], &val, sizeof(val) ) == sizeof(one) ) << "ProcessWakeUp failed!" ;
-        LOG(INFO) << "thread id = " << thread_id_;
+        LOG(INFO) << "wakeup, thread id = " << thread_id_;
     }
 }

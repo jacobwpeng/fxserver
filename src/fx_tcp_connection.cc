@@ -27,20 +27,21 @@ namespace fx
         channel_.reset( new Channel(loop, fd) );
         if( state_ == kConnecting )
         {
-            channel_->set_read_callback( boost::bind( &TcpConnection::ConnectedToPeer, this ) );
+            channel_->set_write_callback( boost::bind( &TcpConnection::ConnectedToPeer, this ) );
+            loop_->RunInLoop( boost::bind( &Channel::EnableWriting, channel_.get() ) );
         }
-        else if( state_ == kConnecting )
+        else if( state_ == kConnected )
         {
             channel_->set_read_callback( boost::bind( &TcpConnection::ReadFromPeer, this ) );
+            channel_->set_write_callback( boost::bind( &TcpConnection::WriteToPeer, this ) );
+            loop_->RunInLoop( boost::bind( &Channel::EnableReading, channel_.get() ) );
         }
         else
         {
             assert( false );                    /* 奇怪的构造参数 */
         }
-        channel_->set_write_callback( boost::bind( &TcpConnection::WriteToPeer, this ) );
         /* TODO : 增加error callback */
 
-        loop_->RunInLoop( boost::bind( &Channel::EnableReading, channel_.get() ) );
     }
 
     TcpConnection::~TcpConnection()
@@ -96,17 +97,15 @@ namespace fx
         iov[1].iov_len = sizeof(buf);
 
         ssize_t bytes_read = readv(fd_, iov, iovcnt);
-        PCHECK( bytes_read >= 0 ) << "readv failed"; /* TODO : 处理出错情况 */
+        LOG_IF( INFO, bytes_read <= 0 ) << " bytes_read = " << bytes_read;
 
-        if( bytes_read == 0 )
+        if( bytes_read == 0 || (bytes_read == -1 && errno == ECONNRESET) )
         {
             /* 客户端断开连接 */
             Close();
         }
         else
         {
-            LOG(INFO) << "read " << bytes_read << " bytes from peer.";
-
             if( static_cast<size_t>(bytes_read) > bytes_left )
             {
                 read_buf_.AddBytes( bytes_left );
@@ -124,7 +123,6 @@ namespace fx
 
     void TcpConnection::WriteToPeer()
     {
-        LOG(INFO) << "WriteToPeer";
         size_t bytes_to_read = write_buf_.BytesToRead();
 
         while( bytes_to_read )
@@ -144,6 +142,17 @@ namespace fx
     {
         assert( state_ == kConnecting );
         state_ = kConnected;
+
+        channel_->EnableReading();
+        channel_->set_read_callback( boost::bind( &TcpConnection::ReadFromPeer, this ) );
+        channel_->DisableWriting();
+        channel_->set_write_callback( boost::bind( &TcpConnection::WriteToPeer, this ) );
+
         if( connected_callback_ ) connected_callback_( shared_from_this() );
+    }
+
+    int TcpConnection::fd() const 
+    { 
+        return channel_->fd(); 
     }
 }

@@ -54,6 +54,7 @@ namespace fx
             /* 干掉自己 */
             void Destroy();
 
+            int fd() const;
             bool closed() const { return state_ == kDisconnected; }
             EventLoop * loop() { return loop_; }
 

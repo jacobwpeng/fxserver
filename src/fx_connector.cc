@@ -40,7 +40,7 @@ namespace fx
         ccb_ = ccb;
     }
 
-    int Connector::ConnectTo(const std::string& ip_addr, int port)
+    void Connector::ConnectTo(const std::string& ip_addr, int port)
     {
         int fd = socket( AF_INET, SOCK_STREAM, 0 );
         PCHECK( fd >= 0 ) << "Create socket failed."; /* TODO : 错误处理 */
@@ -54,17 +54,21 @@ namespace fx
         peer_addr.sin_port = htons(port);
         peer_addr.sin_addr.s_addr = inet_addr(ip_addr.c_str());
 
-        int ret = connect(fd, reinterpret_cast<sockaddr*>(&peer_addr), sizeof(peer_addr) );
-        if( ret == 0 || ( ret == -1 and errno == EINPROGRESS ) )
+        bool connected;
+        int ret = ::connect(fd, reinterpret_cast<sockaddr*>(&peer_addr), sizeof(peer_addr) );
+        if( ret == 0 )
         {
-            /* connect succeed. */
-            if( ccb_ ) ccb_(fd);
-            return 0;
+            ccb_(fd, true);
+        }
+        else if( ret == -1 && EINPROGRESS )
+        {
+            ccb_(fd, false);
         }
         else
         {
+            close(fd);
             PLOG(WARNING) << "connect failed, ret = " << ret;
-            return ret;
+            /* TODO : 错误回调 */
         }
     }
 }

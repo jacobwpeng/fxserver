@@ -30,6 +30,7 @@ LIST(APPEND FX_SRC_LIST
         src/fx_acceptor.cc
         src/fx_connector.cc
         src/fx_tcp_connection.cc
+        src/fx_tcp_client.cc
         src/fx_tcp_server.cc
         src/fx_event_loop.cc
         src/fx_event_loop_thread.cc

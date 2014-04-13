@@ -19,7 +19,7 @@
 namespace fx
 {
     class EventLoop;
-    typedef boost::function< void(int fd) > ConnectCallback;
+    typedef boost::function< void(int, bool) > ConnectCallback;
     class Connector
     {
         public:
@@ -28,12 +28,7 @@ namespace fx
 
             void set_connect_callback(ConnectCallback ccb);
 
-            int ConnectTo( const std::string& ip_addr, int port ); /* TODO : 域名解析 */
-            // create fd
-            // set non-blocking
-            // connect
-            // create channel
-            // EnableReading
+            void ConnectTo( const std::string& ip_addr, int port); /* TODO : 域名解析 */
 
         private:
             EventLoop * loop_;
