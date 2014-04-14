@@ -28,13 +28,13 @@ namespace fx
         if( state_ == kConnecting )
         {
             channel_->set_write_callback( boost::bind( &TcpConnection::ConnectedToPeer, this ) );
-            loop_->RunInLoop( boost::bind( &Channel::EnableWriting, channel_.get() ) );
+            loop_->RunInLoop( boost::bind( &Channel::EnableWriting, channel_.get() ) ); /* TODO : 是否有必要RunInLoop */
         }
         else if( state_ == kConnected )
         {
             channel_->set_read_callback( boost::bind( &TcpConnection::ReadFromPeer, this ) );
             channel_->set_write_callback( boost::bind( &TcpConnection::WriteToPeer, this ) );
-            loop_->RunInLoop( boost::bind( &Channel::EnableReading, channel_.get() ) );
+            loop_->RunInLoop( boost::bind( &Channel::EnableReading, channel_.get() ) ); /* TODO : 是否有必要RunInLoop */
         }
         else
         {
