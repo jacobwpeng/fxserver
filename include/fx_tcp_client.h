@@ -30,10 +30,12 @@ namespace fx
     typedef boost::shared_ptr<TcpConnection> TcpConnectionPtr;
     typedef std::map< int, TcpConnectionPtr > TcpConnectionMap;
 
-    typedef boost::function< void(TcpConnectionPtr) > ConnectedCallback;
-    typedef boost::function< void(TcpConnectionPtr, Buffer*) > ReadCallback;
     class TcpClient : boost::noncopyable
     {
+        public:
+            typedef boost::function< void(TcpConnectionPtr) > ConnectedCallback;
+            typedef boost::function< void(TcpConnectionPtr, Buffer*) > ReadCallback;
+
         public:
             TcpClient(EventLoop * loop);
             ~TcpClient();

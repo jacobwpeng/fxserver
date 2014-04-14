@@ -9,6 +9,7 @@
  * =====================================================================================
  */
 
+#include <string>
 #include <boost/bind.hpp>
 #include <boost/lexical_cast.hpp>
 #include <glog/logging.h>
@@ -17,8 +18,29 @@
 #include "fx_acceptor.h"
 #include "fx_blocking_queue.hpp"
 #include "fx_tcp_server.h"
+#include "fx_tcp_connection.h"
 
+using std::string;
 using namespace fx;
+
+void OnNewConnection( TcpConnectionPtr conn )
+{
+    LOG(INFO) << "New Connection, fd = " << conn->fd();
+}
+
+void OnMessage( TcpConnectionPtr conn, Buffer * buf )
+{
+    string msg( buf->ReadAndClear() );
+
+    LOG(INFO) << "msg[" << msg << "]";
+
+    conn->Write( msg );
+}
+
+void OnConnectionClosed( TcpConnectionPtr conn )
+{
+    LOG(INFO) << "Close Connection, fd = " << conn->fd();
+}
 
 void ThreadFunc(int port)
 {
@@ -47,16 +69,11 @@ int main(int argc, char * argv[])
 
     TcpServer s( &loop, "0.0.0.0", port );
     s.SetThreadNum( thread_count );
+    s.set_read_callback( OnMessage );
+    s.set_new_connection_callback( OnNewConnection );
+    s.set_close_connection_callback( OnConnectionClosed );
     s.Start();
 
     loop.Run();
-
-    //boost::thread_group event_loop_threads;
-    //int base_port = 9026;
-    //for( size_t idx = 0; idx != thread_count; ++idx )
-    //{
-    //    event_loop_threads.create_thread( boost::bind(ThreadFunc, base_port) );
-    //}
-    //event_loop_threads.join_all();
     return 0;
 }

@@ -19,9 +19,11 @@
 namespace fx
 {
     class EventLoop;
-    typedef boost::function< void(int, bool) > ConnectCallback;
     class Connector
     {
+        public:
+            typedef boost::function< void(int, bool) > ConnectCallback;
+
         public:
             Connector(EventLoop * loop);
             ~Connector();

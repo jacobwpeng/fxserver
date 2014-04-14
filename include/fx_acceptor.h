@@ -25,11 +25,12 @@ namespace fx
     class Channel;
     class EventLoop;
     class TcpConnection;
-    typedef boost::function< void(int) > NewConnectionCallback;
     typedef boost::shared_ptr<TcpConnection> TcpConnectionPtr;
     typedef std::map<int, TcpConnectionPtr> TcpConnectionMap;
     class Acceptor
     {
+        public:
+            typedef boost::function< void(int) > NewConnectionCallback;
         public:
             Acceptor(EventLoop * loop);
             ~Acceptor();

@@ -18,11 +18,12 @@
 namespace fx
 {
     class EventLoop;
-    typedef boost::function< void(void) > ChannelReadCallback;
-    typedef boost::function< void(void) > ChannelWriteCallback;
-    typedef boost::function< void(void) > ChannelErrorCallback;
     class Channel
     {
+        public:
+            typedef boost::function< void(void) > ReadCallback;
+            typedef boost::function< void(void) > WriteCallback;
+            typedef boost::function< void(void) > ErrorCallback;
         public:
             Channel(EventLoop * loop, int fd);
             ~Channel();
@@ -42,9 +43,9 @@ namespace fx
             void DisableAll() { events_ = kNoneEvents; Update(); }
 
             /* 回调相关 */
-            void set_read_callback( ChannelReadCallback rcb ) { rcb_ = rcb; }
-            void set_write_callback( ChannelWriteCallback wcb ) { wcb_ = wcb; }
-            void set_error_callback( ChannelErrorCallback ecb ) { ecb_ = ecb; }
+            void set_read_callback( ReadCallback rcb ) { rcb_ = rcb; }
+            void set_write_callback( WriteCallback wcb ) { wcb_ = wcb; }
+            void set_error_callback( ErrorCallback ecb ) { ecb_ = ecb; }
 
         private:
             void Update();
@@ -60,9 +61,9 @@ namespace fx
 
             int events_;
             int revents_;
-            ChannelReadCallback rcb_;
-            ChannelWriteCallback wcb_;
-            ChannelErrorCallback ecb_;
+            ReadCallback rcb_;
+            WriteCallback wcb_;
+            ErrorCallback ecb_;
     };
     typedef std::vector<Channel*> ChannelList;
 }

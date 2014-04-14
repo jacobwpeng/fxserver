@@ -56,25 +56,17 @@ namespace fx
     {
         EventLoop * loop = loop_threads_->NextLoop();
         TcpConnectionPtr conn = boost::make_shared<TcpConnection>(loop, fd, kConnected);
-        conn->set_read_callback( boost::bind(&TcpServer::OnRead, this, _1, _2) );
-        conn->set_close_callback( boost::bind(&TcpServer::OnConnectionClose, this, _1) );
+        conn->set_read_callback( rcb_ );
+        conn->set_close_callback( boost::bind(&TcpServer::OnConnectionClosed, this, _1) );
 
         assert( connections_.find( fd ) == connections_.end() );
 
         connections_[fd] = conn;
+
+        if( nccb_ ) nccb_(conn);
     }
 
-    void TcpServer::OnRead(TcpConnectionPtr conn, Buffer * buf)
-    {
-        /* ECHO back */
-        std::string content = buf->ReadAndClear();
-        LOG(INFO) << " buf ByteSize = " << buf->ByteSize();
-        LOG(INFO) << "read from peer [" << content << "]";
-        LOG(INFO) << "loop addr[" << static_cast<void*>(conn->loop()) << "]";
-        conn->Write( content );
-    }
-
-    void TcpServer::OnConnectionClose(int fd)
+    void TcpServer::OnConnectionClosed(int fd)
     {
         TcpConnectionMap::iterator iter = connections_.find( fd );
         assert( iter != connections_.end() );
@@ -83,6 +75,8 @@ namespace fx
         TcpConnectionPtr conn = iter->second;
         connections_.erase( iter );
         LOG(INFO) << " conn use_count = " << conn.use_count();
+
+        if( cccb_ ) cccb_( conn );
         conn->loop()->QueueInLoop( boost::bind( &TcpConnection::Destroy, conn ) );
     }
 }

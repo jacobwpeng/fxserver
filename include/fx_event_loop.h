@@ -23,9 +23,10 @@ namespace fx
 {
     class Poller;
     class Channel;
-    typedef boost::function< void(void) > PendingFunctor;
     class EventLoop : boost::noncopyable
     {
+        public:
+            typedef boost::function< void(void) > PendingFunctor;
         public:
             EventLoop();
             ~EventLoop();
