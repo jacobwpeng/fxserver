@@ -22,7 +22,7 @@ namespace fx
 {
     const int EventLoop::one = 1;
     EventLoop::EventLoop()
-        :calling_functors_(false)
+        :calling_functors_(false), quit_(false)
     {
         thread_id_ = boost::this_thread::get_id();
         poller_.reset( new Poller() );
@@ -48,7 +48,7 @@ namespace fx
         AssertInLoopThread();
         ChannelList channels;
 
-        while( 1 )
+        while( not quit_ )
         {
             TimeStamp now = poller_->Poll( -1, &channels );
             (void)now;
@@ -62,6 +62,13 @@ namespace fx
             /* 调用pending functors */
             CallPendingFunctors();
         }
+        LOG(INFO) << "EventLoop exiting...";
+    }
+
+    void EventLoop::Quit()
+    {
+        quit_ = true;
+        WakeUp();
     }
 
     void EventLoop::RunInLoop( const PendingFunctor& f )

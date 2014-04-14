@@ -82,6 +82,7 @@ namespace fx
     {
         assert( state_ == kDisconnected );
         loop_->AssertInLoopThread();
+        LOG(INFO) << "TcpConnection::Destroy";
         //LOG(INFO) << "conn use_count = " << shared_from_this().use_count();
     }
 

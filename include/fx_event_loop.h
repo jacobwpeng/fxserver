@@ -18,6 +18,7 @@
 #include <boost/thread/mutex.hpp>
 #include <boost/function.hpp>
 #include <boost/noncopyable.hpp>
+#include <boost/atomic.hpp>
 
 namespace fx
 {
@@ -34,6 +35,7 @@ namespace fx
             void AssertInLoopThread();
 
             void Run();
+            void Quit();
             void WakeUp();
             void UpdateChannel( Channel * channel );
             void RemoveChannel( Channel * channel );
@@ -56,9 +58,9 @@ namespace fx
 
             boost::scoped_ptr<Channel> wakeup_channel_;
             int wakeup_fds_[2];
+            boost::atomic<bool> quit_;
 
             static const int one;
-
     };
 }
 
