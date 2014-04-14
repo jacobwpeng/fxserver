@@ -10,6 +10,7 @@
  */
 
 #include <string>
+#include <boost/any.hpp>
 #include <boost/bind.hpp>
 #include <boost/lexical_cast.hpp>
 #include <glog/logging.h>
@@ -25,7 +26,9 @@ using namespace fx;
 
 void OnNewConnection( TcpConnectionPtr conn )
 {
+    TcpConnection::Context ctx( conn->fd() );
     LOG(INFO) << "New Connection, fd = " << conn->fd();
+    conn->set_context( ctx );
 }
 
 void OnMessage( TcpConnectionPtr conn, Buffer * buf )
@@ -39,7 +42,7 @@ void OnMessage( TcpConnectionPtr conn, Buffer * buf )
 
 void OnConnectionClosed( TcpConnectionPtr conn )
 {
-    LOG(INFO) << "Close Connection, fd = " << conn->fd();
+    LOG(INFO) << "Close Connection, fd = " << boost::any_cast<int>(conn->context());
 }
 
 void ThreadFunc(int port)

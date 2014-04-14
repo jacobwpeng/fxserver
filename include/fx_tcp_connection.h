@@ -40,6 +40,7 @@ namespace fx
             typedef boost::function< void( TcpConnectionPtr conn ) > ConnectedCallback;
             typedef boost::function< void( TcpConnectionPtr conn, Buffer * buf) > ReadCallback;
             typedef boost::function< void( int ) > CloseCallback;
+            typedef boost::any Context;
 
         public:
             TcpConnection(EventLoop * loop, int fd, TcpConnectionState state);
@@ -48,10 +49,13 @@ namespace fx
             void Write( const std::string& content );
             void Write( const char * buf, size_t len );
 
+            void set_context( const Context & ctx ) { ctx_ = ctx; }
+            Context context() const { return ctx_; }
             void set_connected_callback( ConnectedCallback connected_callback) { connected_callback_ = connected_callback; }
             void set_read_callback( ReadCallback rcb );
             void set_close_callback( CloseCallback ccb );
             /* 关闭连接，但是不会马上关闭描述符，因为发送缓冲区中可能还有东西没有发 */
+            /* TODO : Close 半关闭Read? */
             void Close();
             /* 干掉自己 */
             void Destroy();
@@ -76,6 +80,7 @@ namespace fx
             boost::scoped_ptr<Channel> channel_;
             Buffer read_buf_;
             Buffer write_buf_;
+            Context ctx_;
     };
 
 }
