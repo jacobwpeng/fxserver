@@ -68,12 +68,12 @@ namespace fx
     void EventLoop::Quit()
     {
         quit_ = true;
-        WakeUp();
+        if( not InLoopThread() ) WakeUp();
     }
 
     void EventLoop::RunInLoop( const PendingFunctor& f )
     {
-        if( InLoopThread() and calling_functors_ == false )
+        if( InLoopThread() )
         {
             f();
         }
@@ -94,8 +94,7 @@ namespace fx
             boost::mutex::scoped_lock lock(call_functors_mutex_); /* 其它线程塞进来必须加锁 */
             functors_.push_back( f );
         }
-        WakeUp();
-        //if( calling_functors_ || InLoopThread() == false ) WakeUp();
+        if( InLoopThread() == false or calling_functors_ ) WakeUp();
     }
 
     void EventLoop::UpdateChannel(Channel * channel)
