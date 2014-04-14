@@ -17,6 +17,7 @@
 #include <boost/function.hpp>
 #include <boost/noncopyable.hpp>
 #include <boost/enable_shared_from_this.hpp>
+#include <boost/any.hpp>
 #include "fx_buffer.h"
 
 namespace fx
@@ -24,11 +25,7 @@ namespace fx
     class Channel;
     class EventLoop;
     class TcpConnection;
-
     typedef boost::shared_ptr<TcpConnection> TcpConnectionPtr;
-    typedef boost::function< void( TcpConnectionPtr conn ) > TcpConnectionConnectedCallback;
-    typedef boost::function< void( TcpConnectionPtr conn, Buffer * buf) > TcpConnectionReadCallback;
-    typedef boost::function< void( int ) > TcpConnectionCloseCallback;
 
     enum TcpConnectionState
     {
@@ -40,15 +37,20 @@ namespace fx
     class TcpConnection : boost::noncopyable, public boost::enable_shared_from_this<TcpConnection>
     {
         public:
+            typedef boost::function< void( TcpConnectionPtr conn ) > ConnectedCallback;
+            typedef boost::function< void( TcpConnectionPtr conn, Buffer * buf) > ReadCallback;
+            typedef boost::function< void( int ) > CloseCallback;
+
+        public:
             TcpConnection(EventLoop * loop, int fd, TcpConnectionState state);
             ~TcpConnection();
 
             void Write( const std::string& content );
             void Write( const char * buf, size_t len );
 
-            void set_connected_callback( TcpConnectionConnectedCallback connected_callback) { connected_callback_ = connected_callback; }
-            void set_read_callback( TcpConnectionReadCallback rcb );
-            void set_close_callback( TcpConnectionCloseCallback ccb );
+            void set_connected_callback( ConnectedCallback connected_callback) { connected_callback_ = connected_callback; }
+            void set_read_callback( ReadCallback rcb );
+            void set_close_callback( CloseCallback ccb );
             /* 关闭连接，但是不会马上关闭描述符，因为发送缓冲区中可能还有东西没有发 */
             void Close();
             /* 干掉自己 */
@@ -68,9 +70,9 @@ namespace fx
             const int fd_;
             TcpConnectionState state_;
 
-            TcpConnectionReadCallback rcb_;
-            TcpConnectionCloseCallback ccb_;
-            TcpConnectionConnectedCallback connected_callback_;
+            ReadCallback rcb_;
+            CloseCallback ccb_;
+            ConnectedCallback connected_callback_;
             boost::scoped_ptr<Channel> channel_;
             Buffer read_buf_;
             Buffer write_buf_;

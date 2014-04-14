@@ -61,12 +61,12 @@ namespace fx
         channel_->EnableWriting();
     }
 
-    void TcpConnection::set_read_callback(TcpConnectionReadCallback rcb)
+    void TcpConnection::set_read_callback(ReadCallback rcb)
     {
         rcb_ = rcb;
     }
 
-    void TcpConnection::set_close_callback( TcpConnectionCloseCallback ccb )
+    void TcpConnection::set_close_callback( CloseCallback ccb )
     {
         ccb_ = ccb;
     }
