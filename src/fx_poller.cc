@@ -34,7 +34,7 @@ namespace fx
         assert( active_channels != NULL );
 
         int nevents = epoll_wait(epoll_fd_, &events_[0], events_.size(), timeout_ms);
-        TimeStamp now = time(NULL);             /* TODO : 高精度时间戳 */
+        TimeStamp now = base::Now();
         if( nevents > 0 )
         {
             FillActiveChannels( nevents, active_channels );

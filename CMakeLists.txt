@@ -4,8 +4,8 @@ SET(CMAKE_C_COMPILER "gcc")
 SET(CMAKE_CXX_COMPILER "g++")
 PROJECT( fx )
 
-SET(CMAKE_CXX_FLAGS_DEBUG "-Wall -Wextra -Werror -Wno-unused-variable -ggdb")
-SET(CMAKE_CXX_FLAGS_RELEASE "-Wall -Wextra -Werror -Wno-unused-variable -DNDEBUG -O3" )
+SET(CMAKE_CXX_FLAGS_DEBUG "-Wall -Wextra -Werror -Wno-unused-variable -Wno-invalid-offsetof -ggdb")
+SET(CMAKE_CXX_FLAGS_RELEASE "-Wall -Wextra -Werror -Wno-unused-variable -Wno-invalid-offsetof -DNDEBUG -O3" )
 
 CHECK_CXX_COMPILER_FLAG("-Wno-unused-local-typedefs" support)
 IF(support)
@@ -23,6 +23,7 @@ INCLUDE_DIRECTORIES(include)
 FIND_LIBRARY(GLOG "glog")
 FIND_PACKAGE(Boost COMPONENTS REQUIRED system thread)
 LIST(APPEND FX_SRC_LIST 
+        src/fx_base.cc
         src/fx_socket_op.cc
         src/fx_buffer.cc
         src/fx_channel.cc
@@ -32,6 +33,7 @@ LIST(APPEND FX_SRC_LIST
         src/fx_tcp_connection.cc
         src/fx_tcp_client.cc
         src/fx_tcp_server.cc
+        src/fx_timer_wheel.cc
         src/fx_event_loop.cc
         src/fx_event_loop_thread.cc
         src/fx_event_loop_thread_pool.cc

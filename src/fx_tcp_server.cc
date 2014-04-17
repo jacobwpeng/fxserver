@@ -63,7 +63,10 @@ namespace fx
 
         connections_[fd] = conn;
 
-        if( nccb_ ) nccb_(conn);
+        if( nccb_ ) 
+        {
+            loop->RunInLoop( boost::bind( nccb_, conn ) );
+        }
     }
 
     void TcpServer::OnConnectionClosed(int fd)

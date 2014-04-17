@@ -20,10 +20,13 @@
 #include <boost/noncopyable.hpp>
 #include <boost/atomic.hpp>
 
+#include "fx_timer_wheel.h"
+
 namespace fx
 {
     class Poller;
     class Channel;
+    class TimerWheel;
     class EventLoop : boost::noncopyable
     {
         public:
@@ -43,10 +46,15 @@ namespace fx
             void RunInLoop( const PendingFunctor & f );
             void QueueInLoop( const PendingFunctor & f );
 
+            void RemoveTimer( TimerId id );
+            TimerId RunAfter( int interval, const TimerCallback & cb );
+            //TimerId RunAt( TimeStamp ts, const TimerCallback & cb );
+
         private:
             void CallPendingFunctors();
             bool InLoopThread() const;
             void ProcessWakeUp();
+            void InitiallyAdjustTimers();
 
         private:
             bool calling_functors_;
@@ -59,6 +67,10 @@ namespace fx
             boost::scoped_ptr<Channel> wakeup_channel_;
             int wakeup_fds_[2];
             boost::atomic<bool> quit_;
+            boost::scoped_ptr<TimerWheel> timer_mgr_;
+            std::vector<TimerId> non_adjusted_timers_;
+
+            bool started_;
 
             static const int one;
     };

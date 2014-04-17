@@ -12,6 +12,7 @@
 #include "fx_event_loop.h"
 #include "fx_poller.h"
 #include "fx_channel.h"
+#include "fx_timer_wheel.h"
 
 #include <unistd.h>
 #include <fcntl.h>
@@ -22,10 +23,11 @@ namespace fx
 {
     const int EventLoop::one = 1;
     EventLoop::EventLoop()
-        :calling_functors_(false), quit_(false)
+        :calling_functors_(false), quit_(false), started_(false)
     {
         thread_id_ = boost::this_thread::get_id();
         poller_.reset( new Poller() );
+        timer_mgr_.reset( new TimerWheel(this) );
 
         PCHECK( pipe(wakeup_fds_) == 0 ) << "make pipe failed!";
         fcntl( wakeup_fds_[0], F_SETFD, O_NONBLOCK);
@@ -46,21 +48,46 @@ namespace fx
     void EventLoop::Run()
     {
         AssertInLoopThread();
+        started_ = true;
+
         ChannelList channels;
+        TimerCallbackList timer_callbacks;
+
+        TimeStamp start_time = base::Now();
+
+        timer_mgr_->Start( start_time );
+        InitiallyAdjustTimers();
+
+        int timeout = timer_mgr_->NextTimeout( start_time );
+        LOG(INFO) << "timeout = " << timeout << ", thread_id_ = " << thread_id_;
 
         while( not quit_ )
         {
-            TimeStamp now = poller_->Poll( -1, &channels );
-            (void)now;
+
+            TimeStamp now = poller_->Poll( timeout, &channels );
+            LOG(INFO) << "Poll return " << now;
+            LOG(INFO) << "channels.size() = " << channels.size();
 
             for( ChannelList::iterator iter = channels.begin(); iter != channels.end(); ++iter )
             {
+                LOG(INFO) << "Processing event for fd = " << (*iter)->fd();
                 (*iter)->HandleEvents();
             }
             channels.clear();
 
             /* 调用pending functors */
             CallPendingFunctors();
+
+            timer_mgr_->Step( now , &timer_callbacks );
+            LOG(INFO) << "timer_callbacks.size() = " << timer_callbacks.size();
+            for( size_t idx = 0; idx != timer_callbacks.size(); ++idx )
+            {
+                timer_callbacks[idx]();
+            }
+            timer_callbacks.clear();
+
+            timeout = timer_mgr_->NextTimeout( now );
+            LOG(INFO) << "timeout = " << timeout;
         }
         LOG(INFO) << "EventLoop exiting...";
     }
@@ -96,6 +123,41 @@ namespace fx
         }
         if( InLoopThread() == false or calling_functors_ ) WakeUp();
     }
+
+    void EventLoop::RemoveTimer( TimerId id )
+    {
+        AssertInLoopThread();
+        timer_mgr_->RemoveTimer( id );
+        if( not started_ )
+        {
+            std::vector<TimerId>::iterator iter = non_adjusted_timers_.end();
+            while( iter != non_adjusted_timers_.end() && *iter != id ) ++iter;
+
+            assert( iter != non_adjusted_timers_.end() );
+            non_adjusted_timers_.erase( iter ); /* TODO : better performance */
+        }
+    }
+
+    TimerId EventLoop::RunAfter( int interval, const TimerCallback & cb )
+    {
+        AssertInLoopThread();
+        assert( interval >= 0 );
+        if( started_ )
+        {
+            TimeStamp expire_time = base::Now() + interval;
+            return timer_mgr_->RunAt( expire_time , cb );
+        }
+        else
+        {
+            TimerId id = timer_mgr_->RunAfter( interval, cb );
+            non_adjusted_timers_.push_back(id);
+            return id;
+        }
+    }
+    //TimerId EventLoop::RunAt( TimeStamp ts, const TimerCallback & cb )
+    //{
+    //    return timer_mgr_->RunAt( ts, cb );
+    //}
 
     void EventLoop::UpdateChannel(Channel * channel)
     {
@@ -137,6 +199,7 @@ namespace fx
 
     void EventLoop::WakeUp()
     {
+        LOG(INFO) << "Wakeup Called! this_thread = " << boost::this_thread::get_id() << ", thread_id_ = " << thread_id_;
         PCHECK( write( wakeup_fds_[1], &one, sizeof(one) ) == sizeof(one) ) << "wakup failed!" ;
     }
 
@@ -145,5 +208,10 @@ namespace fx
         int val;
         PCHECK( read( wakeup_fds_[0], &val, sizeof(val) ) == sizeof(one) ) << "ProcessWakeUp failed!" ;
         LOG(INFO) << "wakeup, thread id = " << thread_id_;
+    }
+
+    void EventLoop::InitiallyAdjustTimers()
+    {
+        timer_mgr_->AdjustTimer( non_adjusted_timers_ );
     }
 }

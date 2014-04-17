@@ -12,6 +12,7 @@
 #ifndef  __FX_POLLER_H__
 #define  __FX_POLLER_H__
 
+#include "fx_base.h"
 #include "fx_channel.h"
 #include <vector>
 #include <map>
@@ -20,8 +21,7 @@ struct epoll_event;
 
 namespace fx
 {
-    /* TODO : Use more precise timestamp type */
-    typedef int TimeStamp;
+    using base::TimeStamp;
 
     class Poller
     {

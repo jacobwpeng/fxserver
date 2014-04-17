@@ -24,11 +24,20 @@
 using std::string;
 using namespace fx;
 
+int timeout = 5 * 1000;                        /* milliseconds */
+
+void SayGoodbye( TcpConnectionPtr conn )
+{
+    conn->Write( "You give nothing!!!!!!\n" );
+    conn->Close();
+}
+
 void OnNewConnection( TcpConnectionPtr conn )
 {
-    TcpConnection::Context ctx( conn->fd() );
     LOG(INFO) << "New Connection, fd = " << conn->fd();
-    conn->set_context( ctx );
+
+    TimerId id = conn->loop()->RunAfter( timeout, boost::bind( SayGoodbye, conn ) );
+    conn->set_context( id );
 }
 
 void OnMessage( TcpConnectionPtr conn, Buffer * buf )
@@ -38,11 +47,21 @@ void OnMessage( TcpConnectionPtr conn, Buffer * buf )
     LOG(INFO) << "msg[" << msg << "]";
 
     conn->Write( msg );
+
+    TimerId id = boost::any_cast<TimerId>( conn->context() );
+
+    LOG(INFO) << "Before Remove";
+    conn->loop()->RemoveTimer(id);
+    LOG(INFO) << "Remove Done";
+    id = conn->loop()->RunAfter( timeout, boost::bind( SayGoodbye, conn ) );
+    conn->set_context( id );
+
+    LOG(INFO) << "OnMessage Done";
 }
 
 void OnConnectionClosed( TcpConnectionPtr conn )
 {
-    LOG(INFO) << "Close Connection, fd = " << boost::any_cast<int>(conn->context());
+    (void)conn;
 }
 
 void ThreadFunc(int port)
@@ -57,13 +76,18 @@ void ThreadFunc(int port)
     loop.Run();
 }
 
+void Callback( int idx )
+{
+    LOG(INFO) << "idx = " << idx;
+}
+
 int main(int argc, char * argv[])
 {
+    google::InitGoogleLogging(argv[0]);
     if( argc != 2 )
     {
         return -1;
     }
-    google::InitGoogleLogging(argv[0]);
     const size_t thread_count = 4;
 
     EventLoop loop;
