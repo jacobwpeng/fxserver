@@ -4,8 +4,9 @@ SET(CMAKE_C_COMPILER "gcc")
 SET(CMAKE_CXX_COMPILER "g++")
 PROJECT( fx )
 
-SET(CMAKE_CXX_FLAGS_DEBUG "-Wall -Wextra -Werror -Wno-unused-variable -Wno-invalid-offsetof -ggdb")
-SET(CMAKE_CXX_FLAGS_RELEASE "-Wall -Wextra -Werror -Wno-unused-variable -Wno-invalid-offsetof -DNDEBUG -O3" )
+SET(CMAKE_CXX_FLAGS "-Wall -Wextra -Werror -Wno-unused-variable -Wno-invalid-offsetof -Wno-strict-aliasing" )
+SET(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS} -ggdb")
+SET(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS} -DNDEBUG -O3" )
 
 CHECK_CXX_COMPILER_FLAG("-Wno-unused-local-typedefs" support)
 IF(support)

@@ -311,6 +311,7 @@ namespace fx
             }
         }
         assert( false );                    /* never be here */
+        return detail::SlotPos();               /* suppress warnings */
     }
 
     void TimerWheel::SwitchHands()
