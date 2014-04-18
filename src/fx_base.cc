@@ -30,5 +30,23 @@ namespace fx
                         )/1000
                     );
         }
+
+        ProgressTimer::ProgressTimer(std::ostream & os)
+            :os_(os)
+        {
+            s_ = ProgressTimer::Now();
+        }
+
+        ProgressTimer::~ProgressTimer()
+        {
+            os_ << ProgressTimer::Now() - s_ << " us\n";
+        }
+
+        TimeStamp ProgressTimer::Now()
+        {
+            timeval tv;
+            gettimeofday(&tv, NULL);
+            return static_cast<TimeStamp>(tv.tv_sec) * 1000000 + tv.tv_usec;
+        }
     }
 }

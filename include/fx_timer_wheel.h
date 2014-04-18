@@ -23,6 +23,7 @@
 namespace fx
 {
     namespace bi = boost::intrusive;
+    typedef bi::list_base_hook< bi::link_mode< bi::auto_unlink> > auto_unlink_hook;
     typedef uint64_t TimerId;
     typedef boost::function<void(void)> TimerCallback;
     typedef std::vector< TimerCallback > TimerCallbackList;

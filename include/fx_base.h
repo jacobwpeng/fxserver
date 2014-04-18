@@ -13,14 +13,27 @@
 #define  __FX_BASE_H__
 
 #include <stdint.h>
+#include <iostream>
 
 namespace fx
 {
     namespace base
     {
         typedef uint64_t TimeStamp;
-
         TimeStamp Now();
+
+        struct ProgressTimer
+        {
+            ProgressTimer(std::ostream & os = std::cout );
+            ~ProgressTimer();
+
+            private:
+            TimeStamp static Now();
+
+            private:
+                TimeStamp s_;
+                std::ostream& os_;
+        };
     }
 }
 
