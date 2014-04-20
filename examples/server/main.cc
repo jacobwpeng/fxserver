@@ -90,15 +90,14 @@ void Callback( int idx )
 int main(int argc, char * argv[])
 {
     google::InitGoogleLogging(argv[0]);
-    if( argc != 2 )
+    if( argc != 3 )
     {
         return -1;
     }
-    const size_t thread_count = 4;
-
     EventLoop loop;
 
     int port = boost::lexical_cast<int>( argv[1] );
+    size_t thread_count = boost::lexical_cast<size_t>( argv[2] );
 
     TcpServer s( &loop, "0.0.0.0", port );
     s.SetThreadNum( thread_count );
