@@ -11,6 +11,7 @@
 
 #include <string>
 #include <boost/any.hpp>
+#include <boost/weak_ptr.hpp>
 #include <boost/bind.hpp>
 #include <boost/lexical_cast.hpp>
 #include <glog/logging.h>
@@ -26,17 +27,24 @@ using namespace fx;
 
 int timeout = 5 * 1000;                        /* milliseconds */
 
-void SayGoodbye( TcpConnectionPtr conn )
+typedef boost::weak_ptr<TcpConnection> TcpConnectionWeakPtr;
+
+void SayGoodbye( TcpConnectionWeakPtr weak_conn )
 {
-    conn->Write( "You give nothing!!!!!!\n" );
-    conn->Close();
+    TcpConnectionPtr conn = weak_conn.lock();
+    if( conn )
+    {
+        conn->Write( "You give nothing!!!!!!\n" );
+        conn->Close();
+    }
 }
 
 void OnNewConnection( TcpConnectionPtr conn )
 {
     LOG(INFO) << "New Connection, fd = " << conn->fd();
 
-    TimerId id = conn->loop()->RunAfter( timeout, boost::bind( SayGoodbye, conn ) );
+    TcpConnectionWeakPtr weak_conn( conn );
+    TimerId id = conn->loop()->RunAfter( timeout, boost::bind( SayGoodbye, weak_conn ) );
     conn->set_context( id );
 }
 
@@ -50,9 +58,7 @@ void OnMessage( TcpConnectionPtr conn, Buffer * buf )
 
     TimerId id = boost::any_cast<TimerId>( conn->context() );
 
-    LOG(INFO) << "Before Remove";
     conn->loop()->RemoveTimer(id);
-    LOG(INFO) << "Remove Done";
     id = conn->loop()->RunAfter( timeout, boost::bind( SayGoodbye, conn ) );
     conn->set_context( id );
 
