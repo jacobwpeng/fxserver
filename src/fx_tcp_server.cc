@@ -65,8 +65,9 @@ namespace fx
 
         if( nccb_ ) 
         {
-            loop->RunInLoop( boost::bind( nccb_, conn ) );
+            loop->RunInLoop( boost::bind( nccb_, conn ) ); /* FIXME : 与conn->EnableReading存在时序问题 */
         }
+        conn->StartReading();
     }
 
     void TcpServer::OnConnectionClosed(int fd)
@@ -77,7 +78,6 @@ namespace fx
 
         TcpConnectionPtr conn = iter->second;
         connections_.erase( iter );
-        LOG(INFO) << " conn use_count = " << conn.use_count();
 
         if( cccb_ ) cccb_( conn );
         conn->loop()->QueueInLoop( boost::bind( &TcpConnection::Destroy, conn ) );

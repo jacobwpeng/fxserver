@@ -28,13 +28,12 @@ namespace fx
         if( state_ == kConnecting )
         {
             channel_->set_write_callback( boost::bind( &TcpConnection::ConnectedToPeer, this ) );
-            loop_->RunInLoop( boost::bind( &Channel::EnableWriting, channel_.get() ) ); /* TODO : 是否有必要RunInLoop */
+            loop_->RunInLoop( boost::bind( &Channel::EnableWriting, channel_.get() ) );
         }
         else if( state_ == kConnected )
         {
             channel_->set_read_callback( boost::bind( &TcpConnection::ReadFromPeer, this ) );
             channel_->set_write_callback( boost::bind( &TcpConnection::WriteToPeer, this ) );
-            loop_->RunInLoop( boost::bind( &Channel::EnableReading, channel_.get() ) ); /* TODO : 是否有必要RunInLoop */
         }
         else
         {
@@ -48,6 +47,11 @@ namespace fx
     {
         LOG(INFO) << "TcpConnection Destroyed.";
         close(fd_);
+    }
+
+    void TcpConnection::StartReading()
+    {
+        loop_->RunInLoop( boost::bind( &Channel::EnableReading, channel_.get() ) );
     }
 
     void TcpConnection::Write( const std::string& content )
@@ -84,7 +88,6 @@ namespace fx
         assert( state_ == kDisconnected );
         loop_->AssertInLoopThread();
         LOG(INFO) << "TcpConnection::Destroy";
-        //LOG(INFO) << "conn use_count = " << shared_from_this().use_count();
     }
 
     void TcpConnection::ReadFromPeer()
@@ -105,6 +108,7 @@ namespace fx
         if( bytes_read == 0 || (bytes_read == -1 && errno != EAGAIN) )
         {
             /* 客户端断开连接 */
+            LOG(INFO) << "passive close connection";
             Close();
         }
         else
@@ -129,7 +133,7 @@ namespace fx
     {
         size_t bytes_to_read = write_buf_.BytesToRead();
 
-        while( bytes_to_read )
+        while( bytes_to_read and state_ != kDisconnected )
         {
             /* TODO : 判断EWOULDBLOCK 和 EAGAIN */
             ssize_t bytes_write = write(fd_, write_buf_.ReadBegin(), bytes_to_read );

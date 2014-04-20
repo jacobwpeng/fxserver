@@ -46,6 +46,12 @@ namespace fx
             TcpConnection(EventLoop * loop, int fd, TcpConnectionState state);
             ~TcpConnection();
 
+
+            /*-----------------------------------------------------------------------------
+             *  避免在构造函数中EnableReading导致时序问题
+             *-----------------------------------------------------------------------------*/
+            void StartReading();
+
             void Write( const std::string& content );
             void Write( const char * buf, size_t len );
 
