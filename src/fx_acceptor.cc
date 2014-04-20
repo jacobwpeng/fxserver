@@ -81,8 +81,6 @@ namespace fx
         int client_fd = accept(listen_fd_, (sockaddr *)&clt_addr, (unsigned*)&len );
         socketop::SetNonblocking( client_fd );
 
-        LOG(INFO) << "New Connection, fd = " << client_fd;
-
         if( nccb_ ) nccb_(client_fd);
     }
 }

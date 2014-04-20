@@ -35,6 +35,7 @@ void SayGoodbye( TcpConnectionWeakPtr weak_conn )
     if( conn and not conn->closed() )
     {
         conn->Write( "You give nothing!!!!!!\n" );
+        LOG(INFO) << "active close connection";
         conn->Close();
     }
 }
@@ -59,15 +60,23 @@ void OnMessage( TcpConnectionPtr conn, Buffer * buf )
     TimerId id = boost::any_cast<TimerId>( conn->context() );
 
     conn->loop()->RemoveTimer(id);
+    LOG(WARNING) << "RemoveTimer Done, fd = " << conn->fd() << ", timer fd = " << id;
     id = conn->loop()->RunAfter( timeout, boost::bind( SayGoodbye, conn ) );
+    LOG(WARNING) << "AddTimer Done, fd = " << conn->fd() << ", timer fd = " << id;
     conn->set_context( id );
-
-    LOG(INFO) << "OnMessage Done";
 }
 
 void OnConnectionClosed( TcpConnectionPtr conn )
 {
-    (void)conn;
+    TcpConnection::Context ctx = conn->context();
+    if( not ctx.empty() )
+    {
+        //TimerId id = boost::any_cast<TimerId>( ctx );
+        //conn->loop()->RemoveTimer(id);
+        //LOG(WARNING) << "RemoveTimer When Connection Closed, fd = " << conn->fd() << ", timer fd = " << id;
+        //conn->set_context( TcpConnection::Context() );
+    }
+    LOG(INFO) << "Connection closed, fd = " << conn->fd();
 }
 
 void ThreadFunc(int port)

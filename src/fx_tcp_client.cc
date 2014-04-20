@@ -26,7 +26,7 @@ namespace fx
         :loop_(loop)
     {
         connector_.reset( new Connector(loop) );
-        connector_->set_connect_callback( boost::bind( &TcpClient::OnConnect, this, _1, _2) );
+        connector_->set_connect_callback( boost::bind(&TcpClient::OnConnect, this, _1, _2));
     }
 
     TcpClient::~TcpClient()
@@ -36,7 +36,9 @@ namespace fx
 
     void TcpClient::ConnectTo( const std::string& addr, int port )
     {
-        loop_->QueueInLoop( boost::bind( &Connector::ConnectTo, connector_.get(), addr, port ) );
+        loop_->QueueInLoop( boost::bind( &Connector::ConnectTo, connector_.get(), 
+                                            addr, port ) 
+                            );
     }
 
     void TcpClient::OnConnect(int fd, bool connected)

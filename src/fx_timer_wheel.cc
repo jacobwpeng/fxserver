@@ -83,7 +83,6 @@ namespace fx
         {
             expire_time_queue_.push( p->expire_time );
         }
-        LOG(INFO) << "Add timer, id = " << p->id << ", interval = " << interval;
 
         return p->id;
     }
@@ -121,8 +120,6 @@ namespace fx
             tmp.push( ts );
         }
         expire_time_queue_ = tmp;
-
-        LOG(INFO) << "remove timer of id = " << id;
     }
 
     void TimerWheel::AdjustTimer( const std::vector<TimerId> & timer_ids )
@@ -153,7 +150,6 @@ namespace fx
 
     void TimerWheel::Step( TimeStamp now, TimerCallbackList * callbacks )
     {
-        LOG(INFO) << "Step to " << now;
         assert( callbacks != NULL );
         int interval = 0;
         /* 保持时间轮永远向前 */
@@ -161,7 +157,6 @@ namespace fx
 
         bool overflow;
         detail::SlotPos pos = FindPos( interval, true, &overflow );
-        //LOG(INFO) << "interval = " << interval << ", pos.first = " << pos.first << ", pos.second = " << pos.second;
 
         unsigned wheel_pos = pos.first;
         unsigned slot_pos = pos.second;

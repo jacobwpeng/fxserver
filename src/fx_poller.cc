@@ -13,6 +13,7 @@
 
 #include <sys/epoll.h>
 #include <cassert>
+#include <glog/logging.h>
 
 namespace fx
 {
