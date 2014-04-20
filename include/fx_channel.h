@@ -50,6 +50,7 @@ namespace fx
         private:
             void Update();
             void Remove();
+            void PrintEvents(int events_mask);
 
         private:
             EventLoop * loop_;
