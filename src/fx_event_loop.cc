@@ -23,7 +23,7 @@ namespace fx
 {
     const int EventLoop::one = 1;
     EventLoop::EventLoop()
-        :calling_functors_(false), quit_(false), started_(false)
+        :calling_functors_(false), quit_(false), started_(false), iteration_(0)
     {
         thread_id_ = boost::this_thread::get_id();
         poller_.reset( new Poller() );
@@ -59,18 +59,17 @@ namespace fx
         InitiallyAdjustTimers();
 
         int timeout = timer_mgr_->NextTimeout( start_time );
-        LOG(INFO) << "timeout = " << timeout << ", thread_id_ = " << thread_id_;
 
         while( not quit_ )
         {
-
             TimeStamp now = poller_->Poll( timeout, &channels );
-            LOG(INFO) << "Poll return " << now;
-            LOG(INFO) << "channels.size() = " << channels.size();
+            ++iteration_;
+            LOG(INFO) << "iteration_ = " << iteration_ 
+                << ", channels.size() = " << channels.size();
 
-            for( ChannelList::iterator iter = channels.begin(); iter != channels.end(); ++iter )
+            for( ChannelList::iterator iter = channels.begin(); iter != channels.end(); 
+                    ++iter )
             {
-                LOG(INFO) << "Processing event for fd = " << (*iter)->fd();
                 (*iter)->HandleEvents();
             }
             channels.clear();
@@ -79,7 +78,6 @@ namespace fx
             CallPendingFunctors();
 
             timer_mgr_->Step( now , &timer_callbacks );
-            LOG(INFO) << "timer_callbacks.size() = " << timer_callbacks.size();
             for( size_t idx = 0; idx != timer_callbacks.size(); ++idx )
             {
                 timer_callbacks[idx]();
@@ -87,7 +85,6 @@ namespace fx
             timer_callbacks.clear();
 
             timeout = timer_mgr_->NextTimeout( now );
-            LOG(INFO) << "timeout = " << timeout;
         }
         LOG(INFO) << "EventLoop exiting...";
     }
@@ -118,10 +115,11 @@ namespace fx
         }
         else
         {
-            boost::mutex::scoped_lock lock(call_functors_mutex_); /* 其它线程塞进来必须加锁 */
+            /* 其它线程塞进来必须加锁 */
+            boost::mutex::scoped_lock lock(call_functors_mutex_); 
             functors_.push_back( f );
         }
-        if( InLoopThread() == false or calling_functors_ ) WakeUp();
+        if( InLoopThread() == false or calling_functors_ or not started_) WakeUp();
     }
 
     void EventLoop::RemoveTimer( TimerId id )
@@ -199,15 +197,14 @@ namespace fx
 
     void EventLoop::WakeUp()
     {
-        LOG(INFO) << "Wakeup Called! this_thread = " << boost::this_thread::get_id() << ", thread_id_ = " << thread_id_;
-        PCHECK( write( wakeup_fds_[1], &one, sizeof(one) ) == sizeof(one) ) << "wakup failed!" ;
+        PCHECK( write( wakeup_fds_[1], &one, sizeof(one) ) == sizeof(one) ) 
+            << "wakup failed!" ;
     }
 
     void EventLoop::ProcessWakeUp()
     {
         int val;
         PCHECK( read( wakeup_fds_[0], &val, sizeof(val) ) == sizeof(one) ) << "ProcessWakeUp failed!" ;
-        LOG(INFO) << "wakeup, thread id = " << thread_id_;
     }
 
     void EventLoop::InitiallyAdjustTimers()

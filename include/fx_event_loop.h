@@ -71,6 +71,7 @@ namespace fx
             std::vector<TimerId> non_adjusted_timers_;
 
             bool started_;
+            uint64_t iteration_;
 
             static const int one;
     };
