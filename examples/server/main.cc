@@ -32,7 +32,7 @@ typedef boost::weak_ptr<TcpConnection> TcpConnectionWeakPtr;
 void SayGoodbye( TcpConnectionWeakPtr weak_conn )
 {
     TcpConnectionPtr conn = weak_conn.lock();
-    if( conn )
+    if( conn and not conn->closed() )
     {
         conn->Write( "You give nothing!!!!!!\n" );
         conn->Close();

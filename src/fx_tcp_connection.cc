@@ -73,6 +73,7 @@ namespace fx
 
     void TcpConnection::Close()
     {
+        assert( state_ != kDisconnected );
         state_ = kDisconnected;
         channel_->DisableReading();
         if( ccb_ ) ccb_( fd_ );
