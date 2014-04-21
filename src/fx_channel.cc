@@ -37,8 +37,11 @@ namespace fx
     {
         if( revents_ & (EPOLLERR|EPOLLHUP) )
         {
-            LOG(WARNING) << "Got error for fd = " << fd_;
             if( ecb_ ) ecb_();
+            else
+            {
+                LOG(WARNING) << "Got error for fd = " << fd_;
+            }
             socketop::GetAndClearError(fd_);
         }
 

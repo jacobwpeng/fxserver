@@ -27,6 +27,7 @@ LIST(APPEND FX_SRC_LIST
         src/fx_base.cc
         src/fx_socket_op.cc
         src/fx_buffer.cc
+        src/fx_net_address.cc
         src/fx_channel.cc
         src/fx_poller.cc
         src/fx_acceptor.cc

@@ -96,10 +96,10 @@ namespace fx
     void Buffer::EnsureSpace(size_t len)
     {
         size_t bytes_left = BytesCanWrite();
-        /* TODO : 更高级的扩充方式 */
         if( bytes_left < len )
         {
-            internal_buf_.resize( internal_buf_.size() + len - bytes_left );
+            size_t space_need = len - bytes_left;
+            internal_buf_.resize( internal_buf_.size() + space_need * 2 );
         }
     }
 }

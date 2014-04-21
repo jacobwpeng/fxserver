@@ -21,6 +21,7 @@
 #include "fx_blocking_queue.hpp"
 #include "fx_tcp_server.h"
 #include "fx_tcp_connection.h"
+#include "fx_net_address.h"
 
 using std::string;
 using namespace fx;
@@ -36,13 +37,13 @@ void SayGoodbye( TcpConnectionWeakPtr weak_conn )
     {
         conn->Write( "You give nothing!!!!!!\n" );
         LOG(INFO) << "active close connection";
-        conn->Close();
+        conn->ActiveClose();
     }
 }
 
 void OnNewConnection( TcpConnectionPtr conn )
 {
-    LOG(INFO) << "New Connection, fd = " << conn->fd();
+    LOG(INFO) << "New Connection, peer addr = " << conn->PeerAddr();
 
     TcpConnectionWeakPtr weak_conn( conn );
     TimerId id = conn->loop()->RunAfter( timeout, boost::bind( SayGoodbye, weak_conn ) );
@@ -53,7 +54,7 @@ void OnMessage( TcpConnectionPtr conn, Buffer * buf )
 {
     string msg( buf->ReadAndClear() );
 
-    LOG(INFO) << "msg[" << msg << "]";
+    LOG(INFO) << "localaddr = " << conn->LocalAddr() << ", peeraddr = " << conn->PeerAddr() << ", msg[" << msg << "]";
 
     conn->Write( msg );
 
@@ -71,10 +72,10 @@ void OnConnectionClosed( TcpConnectionPtr conn )
     TcpConnection::Context ctx = conn->context();
     if( not ctx.empty() )
     {
-        //TimerId id = boost::any_cast<TimerId>( ctx );
-        //conn->loop()->RemoveTimer(id);
-        //LOG(WARNING) << "RemoveTimer When Connection Closed, fd = " << conn->fd() << ", timer fd = " << id;
-        //conn->set_context( TcpConnection::Context() );
+        TimerId id = boost::any_cast<TimerId>( ctx );
+        conn->loop()->RemoveTimer(id);
+        LOG(WARNING) << "RemoveTimer When Connection Closed, fd = " << conn->fd() << ", timer fd = " << id;
+        conn->set_context( TcpConnection::Context() );
     }
     LOG(INFO) << "Connection closed, fd = " << conn->fd();
 }

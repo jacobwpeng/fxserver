@@ -128,11 +128,12 @@ namespace fx
         timer_mgr_->RemoveTimer( id );
         if( not started_ )
         {
+            /* 一般假定Run之前添加的Timer并不是很多，所以直接遍历实现 */
             std::vector<TimerId>::iterator iter = non_adjusted_timers_.end();
             while( iter != non_adjusted_timers_.end() && *iter != id ) ++iter;
 
             assert( iter != non_adjusted_timers_.end() );
-            non_adjusted_timers_.erase( iter ); /* TODO : better performance */
+            non_adjusted_timers_.erase( iter );
         }
     }
 
