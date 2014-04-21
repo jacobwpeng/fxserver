@@ -16,7 +16,7 @@
 namespace fx
 {
     EventLoopThread::EventLoopThread()
-        :loop_(NULL), thread_(NULL)
+        :loop_(NULL)
     {
 
     }
@@ -29,7 +29,7 @@ namespace fx
     EventLoop * EventLoopThread::StartLoop()
     {
         assert( thread_ == NULL );
-        thread_ = new boost::thread( boost::bind(&EventLoopThread::CreateLoopAndRun, this) ); /* TODO : delete thread_ ?  */
+        thread_.reset( new boost::thread( boost::bind(&EventLoopThread::CreateLoopAndRun, this) ) ); 
 
         {
             boost::mutex::scoped_lock lock( mutex_ );
@@ -43,7 +43,7 @@ namespace fx
 
     boost::thread * EventLoopThread::thread()
     {
-        return thread_;
+        return thread_.get();
     }
 
     void EventLoopThread::CreateLoopAndRun()

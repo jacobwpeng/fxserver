@@ -14,6 +14,7 @@
 
 #include <boost/thread.hpp>
 #include <boost/thread/mutex.hpp>
+#include <boost/scoped_ptr.hpp>
 #include <boost/thread/condition_variable.hpp>
 
 namespace fx
@@ -33,7 +34,7 @@ namespace fx
 
         private:
             EventLoop * loop_;
-            boost::thread * thread_;
+            boost::scoped_ptr<boost::thread> thread_;
             boost::mutex mutex_;
             boost::condition_variable cond_;
     };
