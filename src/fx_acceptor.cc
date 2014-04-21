@@ -23,6 +23,7 @@
 #include "fx_channel.h"
 #include "fx_tcp_connection.h"
 #include "fx_socket_op.h"
+#include "fx_net_address.h"
 
 namespace fx
 {
@@ -42,7 +43,7 @@ namespace fx
         nccb_ = nccb;
     }
 
-    void Acceptor::BindOrAbort(const std::string& addr, int port)
+    void Acceptor::BindOrAbort(const NetAddress& local_addr)
     {
         listen_fd_ = socket(AF_INET, SOCK_STREAM, 0);
         int enable_reuse_addr = 1;
@@ -53,15 +54,16 @@ namespace fx
         timeout.tv_usec = 0;
         setsockopt(listen_fd_, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout) );
 
-        sockaddr_in server_addr;
-        memset(&server_addr, 0x0, sizeof(server_addr) );
-        server_addr.sin_family = AF_INET;
-        server_addr.sin_port = htons(port);
-        server_addr.sin_addr.s_addr = inet_addr(addr.c_str());
+        sockaddr_in server_addr = local_addr.ToSockAddr();
 
         PCHECK( bind(listen_fd_, (sockaddr *)(&server_addr), sizeof(server_addr) ) >= 0 ) << "Bind failed!";
 
         socketop::SetNonblocking(listen_fd_);
+    }
+
+    void Acceptor::BindOrAbort(const std::string& addr, int port)
+    {
+        BindOrAbort( NetAddress(addr, port) );
     }
 
     void Acceptor::Listen()

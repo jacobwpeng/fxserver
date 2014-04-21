@@ -19,6 +19,7 @@
 
 #include <glog/logging.h>
 
+#include "fx_net_address.h"
 #include "fx_socket_op.h"
 #include "fx_event_loop.h"
 
@@ -35,24 +36,13 @@ namespace fx
 
     }
 
-    void Connector::set_connect_callback(ConnectCallback ccb)
-    {
-        ccb_ = ccb;
-    }
-
-    void Connector::ConnectTo(const std::string& ip_addr, int port)
+    void Connector::ConnectTo( const NetAddress & addr )
     {
         int fd = socket( AF_INET, SOCK_STREAM, 0 );
-        PCHECK( fd >= 0 ) << "Create socket failed."; /* TODO : 错误处理 */
-
+        PCHECK( fd >= 0 ) << "Create socket failed.";
         socketop::SetNonblocking(fd);
 
-        sockaddr_in peer_addr;
-        memset( &peer_addr, 0x0, sizeof(peer_addr) );
-
-        peer_addr.sin_family = AF_INET;
-        peer_addr.sin_port = htons(port);
-        peer_addr.sin_addr.s_addr = inet_addr(ip_addr.c_str());
+        sockaddr_in peer_addr = addr.ToSockAddr();
 
         bool connected;
         int ret = ::connect(fd, reinterpret_cast<sockaddr*>(&peer_addr), sizeof(peer_addr) );
@@ -60,7 +50,7 @@ namespace fx
         {
             ccb_(fd, true);
         }
-        else if( ret == -1 && EINPROGRESS )
+        else if( ret == -1 && errno == EINPROGRESS )
         {
             ccb_(fd, false);
         }
@@ -68,7 +58,12 @@ namespace fx
         {
             close(fd);
             PLOG(WARNING) << "connect failed, ret = " << ret;
-            /* TODO : 错误回调 */
+            if( cecb_ ) cecb_( addr.ip_addr(), addr.port() );
         }
+    }
+
+    void Connector::ConnectTo(const std::string& ip_addr, int port)
+    {
+        ConnectTo( NetAddress(ip_addr, port) );
     }
 }

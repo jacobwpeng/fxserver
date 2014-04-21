@@ -24,6 +24,7 @@ namespace fx
 {
     class Channel;
     class EventLoop;
+    class NetAddress;
     class TcpConnection;
     typedef boost::shared_ptr<TcpConnection> TcpConnectionPtr;
     typedef std::map<int, TcpConnectionPtr> TcpConnectionMap;
@@ -36,7 +37,8 @@ namespace fx
             ~Acceptor();
 
             void set_new_connection_callback( NewConnectionCallback nccb );
-            void BindOrAbort(const std::string& addr, int port);       /* TODO : 使用封装结构传递地址 */
+            void BindOrAbort(const NetAddress& local_addr);
+            void BindOrAbort(const std::string& addr, int port);
             void Listen();
 
         private:
