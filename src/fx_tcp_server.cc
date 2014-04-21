@@ -45,7 +45,7 @@ namespace fx
     void TcpServer::Start()
     {
         acceptor_->set_new_connection_callback( boost::bind(&TcpServer::OnNewConnection, this, _1) );
-        acceptor_->BindOrAbort( addr_, port_ );
+        acceptor_->BindOrAbort( *local_addr_ );
         base_loop_->RunInLoop( boost::bind( &Acceptor::Listen, acceptor_.get() ) );
         loop_threads_->Start();
     }
@@ -86,7 +86,7 @@ namespace fx
 
     void TcpServer::OnConnectionClosed(int fd)
     {
-        base_loop_->RunInLoop( boost::bind( &TcpServer::HandleConnectionClose, this, fd ) ); /* must run in acceptor loop thread */
+        base_loop_->RunInLoop( boost::bind( &TcpServer::HandleConnectionClose, this, fd ) ); 
     }
 
     void TcpServer::HandleConnectionClose(int fd)

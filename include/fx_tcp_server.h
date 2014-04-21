@@ -61,8 +61,6 @@ namespace fx
             EventLoop * base_loop_;
             boost::scoped_ptr<EventLoopThreadPool> loop_threads_;
 
-            std::string addr_;
-            int port_;
             unsigned thread_num_;
             ReadCallback rcb_;
             CloseConnectionCallback cccb_;
