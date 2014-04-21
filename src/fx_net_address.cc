@@ -71,7 +71,7 @@ namespace fx
     {
         sockaddr_in sa;
         memset( &sa, 0x0, sizeof(sa) );
-        socklen_t sock_len;
+        socklen_t sock_len = sizeof(sa);
 
         PCHECK( getsockname(sockfd, reinterpret_cast<sockaddr*>(&sa), &sock_len) == 0 ) << "getsockname failed";
 
@@ -82,7 +82,7 @@ namespace fx
     {
         sockaddr_in sa;
         memset( &sa, 0x0, sizeof(sa) );
-        socklen_t sock_len;
+        socklen_t sock_len = sizeof(sa);
 
         PCHECK( getpeername(sockfd, reinterpret_cast<sockaddr*>(&sa), &sock_len) == 0 ) << "getsockname failed";
 
