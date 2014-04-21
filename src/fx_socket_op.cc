@@ -41,5 +41,20 @@ namespace fx
                     << ", fd = " << fd;
             }
         }
+
+        void DisableReading( int fd )
+        {
+            PCHECK( shutdown( fd, SHUT_RD ) == 0 ) << "DisableReading failed";
+        }
+
+        void DisableWriting( int fd )
+        {
+            PCHECK( shutdown( fd, SHUT_WR ) == 0 ) << "DisableWriting failed";
+        }
+
+        void DisableReadingAndWriting( int fd )
+        {
+            PCHECK( shutdown( fd, SHUT_RDWR ) == 0 ) << "DisableReadingAndWriting failed";
+        }
     }
 }

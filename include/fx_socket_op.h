@@ -21,6 +21,9 @@ namespace fx
     {
         void SetNonblocking(int fd);
         void GetAndClearError( int fd );
+        void DisableReading( int fd );
+        void DisableWriting( int fd );
+        void DisableReadingAndWriting( int fd );
     }
 }
 
