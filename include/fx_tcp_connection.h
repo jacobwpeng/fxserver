@@ -24,6 +24,7 @@ namespace fx
 {
     class Channel;
     class EventLoop;
+    class NetAddress;
     class TcpConnection;
     typedef boost::shared_ptr<TcpConnection> TcpConnectionPtr;
 
@@ -60,20 +61,24 @@ namespace fx
             void set_connected_callback( ConnectedCallback connected_callback) { connected_callback_ = connected_callback; }
             void set_read_callback( ReadCallback rcb );
             void set_close_callback( CloseCallback ccb );
-            /* 关闭连接，但是不会马上关闭描述符，因为发送缓冲区中可能还有东西没有发 */
-            /* TODO : Close 半关闭Read? */
-            void Close();
+            /* 设置连接状态为kDisconnected，但是不会马上关闭描述符，因为发送缓冲区中可能还有东西没有发 */
+            void ActiveClose();
+            void PassiveClose();
             /* 干掉自己 */
             void Destroy();
 
             int fd() const;
             bool closed() const { return state_ == kDisconnected; }
+            const NetAddress & LocalAddr() { return *local_addr_; }
+            const NetAddress & PeerAddr() { return *peer_addr_; }
             EventLoop * loop() { return loop_; }
 
         private:
             void ReadFromPeer();
             void WriteToPeer();
+            void HandleError();
             void ConnectedToPeer();
+            void GetAddress();
 
         private:
             EventLoop * loop_;
@@ -84,6 +89,8 @@ namespace fx
             CloseCallback ccb_;
             ConnectedCallback connected_callback_;
             boost::scoped_ptr<Channel> channel_;
+            boost::scoped_ptr<NetAddress> local_addr_;
+            boost::scoped_ptr<NetAddress> peer_addr_;
             Buffer read_buf_;
             Buffer write_buf_;
             Context ctx_;

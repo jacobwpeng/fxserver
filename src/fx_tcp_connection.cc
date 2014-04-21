@@ -18,6 +18,8 @@
 
 #include "fx_channel.h"
 #include "fx_event_loop.h"
+#include "fx_socket_op.h"
+#include "fx_net_address.h"
 
 namespace fx
 {
@@ -34,13 +36,13 @@ namespace fx
         {
             channel_->set_read_callback( boost::bind( &TcpConnection::ReadFromPeer, this ) );
             channel_->set_write_callback( boost::bind( &TcpConnection::WriteToPeer, this ) );
+            GetAddress();
         }
         else
         {
             assert( false );                    /* 奇怪的构造参数 */
         }
-        /* TODO : 增加error callback */
-
+        channel_->set_error_callback( boost::bind( &TcpConnection::HandleError, this ) );
     }
 
     TcpConnection::~TcpConnection()
@@ -75,11 +77,21 @@ namespace fx
         ccb_ = ccb;
     }
 
-    void TcpConnection::Close()
+    void TcpConnection::ActiveClose()
     {
         assert( state_ != kDisconnected );
         state_ = kDisconnected;
         channel_->DisableReading();
+        socketop::DisableReading( fd_ );
+        if( ccb_ ) ccb_( fd_ );
+    }
+
+    void TcpConnection::PassiveClose()
+    {
+        assert( state_ != kDisconnected );
+        state_ = kDisconnected;
+        channel_->DisableReading();
+        channel_->DisableWriting();
         if( ccb_ ) ccb_( fd_ );
     }
 
@@ -92,7 +104,8 @@ namespace fx
 
     void TcpConnection::ReadFromPeer()
     {
-        char buf[ 1 << 16 ];                    /* 64K stack buf */
+        const size_t local_buf_len = 1 << 16;   /* 64k stack buf */
+        char buf[ local_buf_len ];
         const int iovcnt = 2;
         iovec iov[iovcnt];
 
@@ -105,11 +118,13 @@ namespace fx
         ssize_t bytes_read = readv(fd_, iov, iovcnt);
         LOG_IF( INFO, bytes_read <= 0 ) << " bytes_read = " << bytes_read;
 
-        if( bytes_read == 0 || (bytes_read == -1 && errno != EAGAIN) )
+        if( bytes_read == 0 || 
+            (bytes_read == -1 && errno != EAGAIN && errno != EWOULDBLOCK )
+          )
         {
             /* 客户端断开连接 */
-            LOG(INFO) << "passive close connection, fd = " << fd_;
-            Close();
+            PLOG(INFO) << "passive close connection, fd = " << fd_;
+            PassiveClose();
         }
         else
         {
@@ -126,24 +141,44 @@ namespace fx
 
             if( rcb_ ) rcb_( shared_from_this(), &read_buf_ );
         }
-        /* TODO : 可能还没读完？ */
+        /* 没读完的情况很少，而且如果发生了这样的情况poller会在下一次poll的时候仍然继续读取数据 */
     }
 
     void TcpConnection::WriteToPeer()
     {
         size_t bytes_to_read = write_buf_.BytesToRead();
 
-        while( bytes_to_read and state_ != kDisconnected )
+        while( bytes_to_read != 0 )
         {
-            /* TODO : 判断EWOULDBLOCK 和 EAGAIN */
             ssize_t bytes_write = write(fd_, write_buf_.ReadBegin(), bytes_to_read );
-            PCHECK( bytes_write >= 0 ) << "write failed.";
-
+            if( bytes_write == -1 )
+            {
+                if( errno == EAGAIN || errno == EWOULDBLOCK )
+                {
+                    /* Cannot write only more */
+                    LOG(WARNING) << "Write would block";
+                }
+                else if( state_ == kDisconnected ) /* connection has been closed */
+                {
+                }
+                else
+                {
+                    /* write just failed, so we close this connection */
+                    ActiveClose();
+                }
+                break;
+            }
             write_buf_.ConsumeBytes( bytes_write );
             bytes_to_read = write_buf_.BytesToRead();
         }
 
-        channel_->DisableWriting();
+        /* only disable writing when all contents have been written to socket */
+        if( bytes_to_read == 0 ) channel_->DisableWriting();
+    }
+
+    void TcpConnection::HandleError()
+    {
+        LOG(WARNING) << "Got Error while HandleEvents, fd = " << fd_;
     }
 
     void TcpConnection::ConnectedToPeer()
@@ -151,12 +186,26 @@ namespace fx
         assert( state_ == kConnecting );
         state_ = kConnected;
 
+        GetAddress();
+
         channel_->EnableReading();
         channel_->set_read_callback( boost::bind( &TcpConnection::ReadFromPeer, this ) );
         channel_->DisableWriting();
         channel_->set_write_callback( boost::bind( &TcpConnection::WriteToPeer, this ) );
 
         if( connected_callback_ ) connected_callback_( shared_from_this() );
+    }
+
+    void TcpConnection::GetAddress()
+    {
+        /* can only be called on connected socket */
+        assert( state_ == kConnected );
+        /* can only be called once */
+        assert( not local_addr_ );
+        assert( not peer_addr_ );
+
+        local_addr_.reset( new NetAddress(NetAddress::GetLocalAddr(fd_) ) );
+        peer_addr_.reset( new NetAddress(NetAddress::GetPeerAddr(fd_) ) );
     }
 
     int TcpConnection::fd() const 
