@@ -61,7 +61,7 @@ void OnMessage( TcpConnectionPtr conn, Buffer * buf )
 
     conn->loop()->RemoveTimer(id);
     LOG(WARNING) << "RemoveTimer Done, fd = " << conn->fd() << ", timer fd = " << id;
-    id = conn->loop()->RunAfter( timeout, boost::bind( SayGoodbye, conn ) );
+    id = conn->loop()->RunAfter( timeout, boost::bind( SayGoodbye, TcpConnectionWeakPtr(conn) ) );
     LOG(WARNING) << "AddTimer Done, fd = " << conn->fd() << ", timer fd = " << id;
     conn->set_context( id );
 }

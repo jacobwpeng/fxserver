@@ -12,8 +12,9 @@
 #include "fx_channel.h"
 
 #include <sys/epoll.h>
-#include "fx_event_loop.h"
 #include <glog/logging.h>
+#include "fx_socket_op.h"
+#include "fx_event_loop.h"
 
 namespace fx
 {
@@ -38,6 +39,7 @@ namespace fx
         {
             LOG(WARNING) << "Got error for fd = " << fd_;
             if( ecb_ ) ecb_();
+            socketop::GetAndClearError(fd_);
         }
 
         if( revents_ & (EPOLLOUT|EPOLLWRNORM) )

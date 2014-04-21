@@ -13,11 +13,14 @@
 #ifndef  __FX_SOCKET_OP__
 #define  __FX_SOCKET_OP__
 
+#include <string>
+
 namespace fx
 {
     namespace socketop
     {
         void SetNonblocking(int fd);
+        void GetAndClearError( int fd );
     }
 }
 

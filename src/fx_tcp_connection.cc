@@ -87,7 +87,7 @@ namespace fx
     {
         assert( state_ == kDisconnected );
         loop_->AssertInLoopThread();
-        LOG(INFO) << "TcpConnection::Destroy";
+        LOG(INFO) << "TcpConnection::Destroy, shared_from_this().use_count() = " << shared_from_this().use_count();;
     }
 
     void TcpConnection::ReadFromPeer()
@@ -108,7 +108,7 @@ namespace fx
         if( bytes_read == 0 || (bytes_read == -1 && errno != EAGAIN) )
         {
             /* 客户端断开连接 */
-            LOG(INFO) << "passive close connection";
+            LOG(INFO) << "passive close connection, fd = " << fd_;
             Close();
         }
         else
