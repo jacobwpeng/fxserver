@@ -61,9 +61,7 @@ void OnMessage( TcpConnectionPtr conn, Buffer * buf )
     TimerId id = boost::any_cast<TimerId>( conn->context() );
 
     conn->loop()->RemoveTimer(id);
-    LOG(WARNING) << "RemoveTimer Done, fd = " << conn->fd() << ", timer fd = " << id;
     id = conn->loop()->RunAfter( timeout, boost::bind( SayGoodbye, TcpConnectionWeakPtr(conn) ) );
-    LOG(WARNING) << "AddTimer Done, fd = " << conn->fd() << ", timer fd = " << id;
     conn->set_context( id );
 }
 
@@ -74,7 +72,6 @@ void OnConnectionClosed( TcpConnectionPtr conn )
     {
         TimerId id = boost::any_cast<TimerId>( ctx );
         conn->loop()->RemoveTimer(id);
-        LOG(WARNING) << "RemoveTimer When Connection Closed, fd = " << conn->fd() << ", timer fd = " << id;
         conn->set_context( TcpConnection::Context() );
     }
     LOG(INFO) << "Connection closed, fd = " << conn->fd();

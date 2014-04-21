@@ -20,14 +20,22 @@
 #include "fx_tcp_connection.h"
 #include "fx_buffer.h"
 #include "fx_event_loop_thread_pool.h"
+#include "fx_net_address.h"
 
 namespace fx
 {
-    TcpServer::TcpServer(EventLoop * loop, const std::string& addr, int port)
-        :base_loop_(loop), addr_(addr), port_(port), thread_num_(0)
+    TcpServer::TcpServer(EventLoop * loop, const NetAddress& addr)
+        :base_loop_(loop), thread_num_(0)
     {
-        acceptor_.reset( new Acceptor(loop) );
-        loop_threads_.reset( new EventLoopThreadPool(loop) );
+        local_addr_.reset( new NetAddress(addr) );
+        Init();
+    }
+
+    TcpServer::TcpServer(EventLoop * loop, const std::string& ip_addr, int port)
+        :base_loop_(loop), thread_num_(0)
+    {
+        local_addr_.reset( new NetAddress(ip_addr, port) );
+        Init();
     }
 
     TcpServer::~TcpServer()
@@ -50,6 +58,12 @@ namespace fx
             loop_threads_->SetLoopThreadCount( thread_num );
             thread_num_ = thread_num;
         }
+    }
+
+    void TcpServer::Init()
+    {
+        acceptor_.reset( new Acceptor(base_loop_) );
+        loop_threads_.reset( new EventLoopThreadPool(base_loop_) );
     }
 
     void TcpServer::OnNewConnection(int fd)

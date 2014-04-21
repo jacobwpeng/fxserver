@@ -24,6 +24,7 @@ namespace fx
     class Buffer;
     class Acceptor;
     class TcpConnection;
+    class NetAddress;
     class EventLoop;
     class EventLoopThreadPool;
     typedef boost::shared_ptr<TcpConnection> TcpConnectionPtr;
@@ -36,7 +37,8 @@ namespace fx
             typedef boost::function< void(TcpConnectionPtr) > NewConnectionCallback;
 
         public:
-            TcpServer(EventLoop * loop_, const std::string& addr, int port); /* TODO : 封装地址结构 */
+            TcpServer(EventLoop * loop, const NetAddress & addr);
+            TcpServer(EventLoop * loop, const std::string& addr, int port);
             ~TcpServer();
 
             void Start();
@@ -46,6 +48,7 @@ namespace fx
             void set_new_connection_callback( NewConnectionCallback nccb ) { nccb_ = nccb; }
 
         private:
+            void Init();
             void OnNewConnection(int fd);
             void OnConnectionClosed(int fd);
             void HandleConnectionClose(int fd);
@@ -53,6 +56,7 @@ namespace fx
         private:
             typedef std::map<int, TcpConnectionPtr> TcpConnectionMap;
             TcpConnectionMap connections_;
+            boost::scoped_ptr<NetAddress> local_addr_;
             boost::scoped_ptr<Acceptor> acceptor_;
             EventLoop * base_loop_;
             boost::scoped_ptr<EventLoopThreadPool> loop_threads_;

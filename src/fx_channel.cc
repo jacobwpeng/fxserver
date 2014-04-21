@@ -54,7 +54,7 @@ namespace fx
         {
             if( rcb_ ) rcb_();
         }
-        PrintEvents(revents_);
+        //PrintEvents(revents_);
         revents_ = 0;
     }
 
