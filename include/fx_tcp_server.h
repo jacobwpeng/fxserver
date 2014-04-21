@@ -48,6 +48,7 @@ namespace fx
         private:
             void OnNewConnection(int fd);
             void OnConnectionClosed(int fd);
+            void HandleConnectionClose(int fd);
 
         private:
             typedef std::map<int, TcpConnectionPtr> TcpConnectionMap;

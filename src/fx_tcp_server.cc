@@ -72,6 +72,11 @@ namespace fx
 
     void TcpServer::OnConnectionClosed(int fd)
     {
+        base_loop_->RunInLoop( boost::bind( &TcpServer::HandleConnectionClose, this, fd ) ); /* must run in acceptor loop thread */
+    }
+
+    void TcpServer::HandleConnectionClose(int fd)
+    {
         TcpConnectionMap::iterator iter = connections_.find( fd );
         assert( iter != connections_.end() );
         LOG(INFO) << "remove conn from connections, fd = " << fd;
@@ -79,7 +84,10 @@ namespace fx
         TcpConnectionPtr conn = iter->second;
         connections_.erase( iter );
 
-        if( cccb_ ) cccb_( conn );
+        if( cccb_ ) 
+        {
+            conn->loop()->RunInLoop( boost::bind(cccb_, conn ) ); /* must run in the IO thread which conn belongs to */
+        }
         conn->loop()->QueueInLoop( boost::bind( &TcpConnection::Destroy, conn ) );
     }
 }
