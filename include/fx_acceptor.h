@@ -36,7 +36,7 @@ namespace fx
             ~Acceptor();
 
             void set_new_connection_callback( NewConnectionCallback nccb );
-            void BindOrAbort(const std::string& addr, int port);       /* TODO : 使用封装结构传递地址 */
+            void BindOrAbort(const std::string& addr, int port);       /* TODO : 浣跨敤灏佽缁撴瀯浼犻�掑湴鍧� */
             void Listen();
 
         private:

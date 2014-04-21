@@ -135,13 +135,13 @@ namespace fx
 
             detail::Timer * p = iter->second;
 
-            int interval = p->expire_time;          /* Ã»StartÖ®Ç°expire_time¾ÍÊÇinterval */
+            int interval = p->expire_time;          /* æ²¡Startä¹‹å‰expire_timeå°±æ˜¯interval */
             assert( p->is_linked() );
             p->unlink();
             detail::SlotPos pos = FindPos( interval );
             wheels_[pos.first][pos.second].push_back( *(p) );
             
-            p->expire_time += last_expire_time_;    /* Õâ¸öÊ±ºò²ÅÊÇÕæµÄexpire_time */
+            p->expire_time += last_expire_time_;    /* è¿™ä¸ªæ—¶å€™æ‰æ˜¯çœŸçš„expire_time */
             expire_time_queue_.push( p->expire_time );
         }
 
@@ -152,7 +152,7 @@ namespace fx
     {
         assert( callbacks != NULL );
         int interval = 0;
-        /* ±£³ÖÊ±¼äÂÖÓÀÔ¶ÏòÇ° */
+        /* ä¿æŒæ—¶é—´è½®æ°¸è¿œå‘å‰ */
         if( last_expire_time_ < now ) interval = now - last_expire_time_;
 
         bool overflow;
@@ -165,7 +165,7 @@ namespace fx
         unsigned end_wheel_pos = wheel_pos;
         if( overflow )
         {
-            /* Òç³ö£¬ËùÓĞµÄtimer¶¼¹ıÆÚÁË */
+            /* æº¢å‡ºï¼Œæ‰€æœ‰çš„timeréƒ½è¿‡æœŸäº† */
             end_wheel_pos = kWheelCount;
         }
 
@@ -182,14 +182,14 @@ namespace fx
 
         if( overflow )
         {
-            /* Òç³öµÄ»°£¬ËùÓĞµÄTimer¶¼Ó¦¸ÃÔÚlÀïÃæÁË */
+            /* æº¢å‡ºçš„è¯ï¼Œæ‰€æœ‰çš„Timeréƒ½åº”è¯¥åœ¨lé‡Œé¢äº† */
         }
         else
         {
-            /* Ã»ÓĞÒç³öµÄÊ±ºò£¬Í£ÁôµÄÎ»ÖÃ±ØĞëÃ»ÓĞ½øÎ» */
+            /* æ²¡æœ‰æº¢å‡ºçš„æ—¶å€™ï¼Œåœç•™çš„ä½ç½®å¿…é¡»æ²¡æœ‰è¿›ä½ */
             assert( hands_[end_wheel_pos] <= slot_pos );
 
-            /* Ã»ÓĞÒç³ö£¬ÄÇÃ´µÃ°Ñend_wheel_posÎ»ÖÃµÄ hands[end_wheel_pos]µ½slot_pos-1 µÄÒ²¼Ó½øÀ´*/
+            /* æ²¡æœ‰æº¢å‡ºï¼Œé‚£ä¹ˆå¾—æŠŠend_wheel_posä½ç½®çš„ hands[end_wheel_pos]åˆ°slot_pos-1 çš„ä¹ŸåŠ è¿›æ¥*/
             for( unsigned slot_idx = hands_[end_wheel_pos]; slot_idx != slot_pos; ++slot_idx )
             {
                 l.splice( l.end(), wheels_[end_wheel_pos][slot_idx] );
@@ -198,7 +198,7 @@ namespace fx
             std::vector<TimerId> timer_ids;
             TimerList::iterator s( wheels_[end_wheel_pos][slot_pos].begin() ), e( wheels_[end_wheel_pos][slot_pos].end() );
 
-            transform( s, e, back_inserter(timer_ids), detail::retrieve_timer_id ); /* »ñÈ¡Õâ¸öslotÀïÃæËùÓĞtimerµÄid */
+            transform( s, e, back_inserter(timer_ids), detail::retrieve_timer_id ); /* è·å–è¿™ä¸ªsloté‡Œé¢æ‰€æœ‰timerçš„id */
 
             BOOST_FOREACH( TimerId id, timer_ids )
             {
@@ -209,14 +209,14 @@ namespace fx
                 if( t.expire_time <= now )
                 {
                     t.unlink();
-                    /* ÕâÒ»²¿·ÖÒÑ¾­³¬Ê± */
+                    /* è¿™ä¸€éƒ¨åˆ†å·²ç»è¶…æ—¶ */
                     l.push_back(t);
                 }
             }
-            /* Ê£ÏÂµÄÕâ¸öslotÀïÃæËùÓĞtimers¶¼ÒªÖØĞÂµ÷ÕûÎ»ÖÃÁË */
+            /* å‰©ä¸‹çš„è¿™ä¸ªsloté‡Œé¢æ‰€æœ‰timerséƒ½è¦é‡æ–°è°ƒæ•´ä½ç½®äº† */
         }
 
-        SwitchHands();                          /* µ÷ÕûÎ»ÖÃÖ®Ç°ÏÈµ÷ÕûÖ¸Õë */
+        SwitchHands();                          /* è°ƒæ•´ä½ç½®ä¹‹å‰å…ˆè°ƒæ•´æŒ‡é’ˆ */
 
         while( not expire_time_queue_.empty() and now >= expire_time_queue_.top() )
         {
@@ -224,13 +224,13 @@ namespace fx
         }
 
         std::vector<TimerId> removed_timer_ids;
-        BOOST_FOREACH( detail::Timer & t, l )           /* ÏÈ°ÑËùÓĞ³¬Ê±µÄtimerµÄ»Øµ÷º¯Êı´«³öÈ¥ */
+        BOOST_FOREACH( detail::Timer & t, l )           /* å…ˆæŠŠæ‰€æœ‰è¶…æ—¶çš„timerçš„å›è°ƒå‡½æ•°ä¼ å‡ºå» */
         {
             removed_timer_ids.push_back( t.id );
-            callbacks->push_back( t.cb ); /* ±£´æËùÓĞTimerµÄ»Øµ÷º¯Êı */
+            callbacks->push_back( t.cb ); /* ä¿å­˜æ‰€æœ‰Timerçš„å›è°ƒå‡½æ•° */
         }
 
-        BOOST_FOREACH( TimerId id, removed_timer_ids ) /* È»ºó°ÑËùÓĞ³¬Ê±µÄTimer¸Éµô */
+        BOOST_FOREACH( TimerId id, removed_timer_ids ) /* ç„¶åæŠŠæ‰€æœ‰è¶…æ—¶çš„Timerå¹²æ‰ */
         {
             TimerMap::iterator iter = timers_.find( id );
             assert( iter != timers_.end() );
@@ -239,12 +239,12 @@ namespace fx
         }
 
         std::vector<detail::Timer*> timers_to_adjust;
-        BOOST_FOREACH( detail::Timer & t, wheels_[end_wheel_pos][slot_pos] ) /* È»ºóÕÒµ½ĞèÒªµ÷ÕûÎ»ÖÃµÄtimer */
+        BOOST_FOREACH( detail::Timer & t, wheels_[end_wheel_pos][slot_pos] ) /* ç„¶åæ‰¾åˆ°éœ€è¦è°ƒæ•´ä½ç½®çš„timer */
         {
             timers_to_adjust.push_back( &t );
         }
 
-        BOOST_FOREACH( detail::Timer * p, timers_to_adjust ) /* È»ºó°¤¸öµ÷ÕûÎ»ÖÃ */
+        BOOST_FOREACH( detail::Timer * p, timers_to_adjust ) /* ç„¶åæŒ¨ä¸ªè°ƒæ•´ä½ç½® */
         {
             assert( p->expire_time > now );
             int interval = p->expire_time - now;
@@ -268,23 +268,23 @@ namespace fx
 
         for( unsigned idx = 0; idx != kWheelCount; ++idx )
         {
-            /* ¿ìËÙµÄÈ¡ÓàºÍ³ı·¨£¬ÒªÇóÃ¿¸öwheelÓĞ2µÄÃİ´Î¸öslot */
+            /* å¿«é€Ÿçš„å–ä½™å’Œé™¤æ³•ï¼Œè¦æ±‚æ¯ä¸ªwheelæœ‰2çš„å¹‚æ¬¡ä¸ªslot */
             mod = interval & (kWheelSlotCount[idx] - 1);
             res = interval >> kWheelSlotOffset[idx];
 
             new_hands[idx] = mod + hands_[idx];
-            if( mod + hands_[idx] >= kWheelSlotCount[idx] ) /* ½øÎ» */
+            if( mod + hands_[idx] >= kWheelSlotCount[idx] ) /* è¿›ä½ */
             {
                 new_hands[idx] -= kWheelSlotCount[idx];
                 ++res;
             }
 
-            if( res == 0 )                      /* Ã»ÓĞÓ°Ïìµ½ÉÏÒ»²ãµÄwheel */
+            if( res == 0 )                      /* æ²¡æœ‰å½±å“åˆ°ä¸Šä¸€å±‚çš„wheel */
             {
-                if( update_hands ) memcpy( hands_copy_[1-hands_idx_], new_hands, kWheelCount * sizeof(unsigned) ); /* °ÑĞÂµÄÖ¸Õë·Åµ½copyÀïÃæ */
+                if( update_hands ) memcpy( hands_copy_[1-hands_idx_], new_hands, kWheelCount * sizeof(unsigned) ); /* æŠŠæ–°çš„æŒ‡é’ˆæ”¾åˆ°copyé‡Œé¢ */
                 assert( idx < kWheelCount );
                 assert( new_hands[idx] < kWheelSlotCount[idx] );
-                return detail::SlotPos( idx, new_hands[idx] ); /* interval ËùÊôµÄslot */
+                return detail::SlotPos( idx, new_hands[idx] ); /* interval æ‰€å±çš„slot */
             }
             else
             {
@@ -297,8 +297,8 @@ namespace fx
         if( overflow )*overflow = true;
         for( unsigned idx = 0; idx != kWheelCount; ++idx )
         {
-            unsigned wheel_idx = kWheelCount - idx - 1; /* ´Ó¸ßµ½µÍ±éÀú */
-            if( new_hands[wheel_idx] != 0 )     /* Òç³öµÄÊ±ºòÓ¦¸Ã·Åµ½µÚÒ»¸ö×î¸ßÎ»²»Îª0µÄslotÀï */
+            unsigned wheel_idx = kWheelCount - idx - 1; /* ä»é«˜åˆ°ä½éå† */
+            if( new_hands[wheel_idx] != 0 )     /* æº¢å‡ºçš„æ—¶å€™åº”è¯¥æ”¾åˆ°ç¬¬ä¸€ä¸ªæœ€é«˜ä½ä¸ä¸º0çš„sloté‡Œ */
             {
                 assert( wheel_idx < kWheelCount );
                 assert( new_hands[wheel_idx] < kWheelSlotCount[wheel_idx] );

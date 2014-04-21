@@ -36,7 +36,7 @@ namespace fx
             typedef boost::function< void(TcpConnectionPtr) > NewConnectionCallback;
 
         public:
-            TcpServer(EventLoop * loop_, const std::string& addr, int port); /* TODO : 封装地址结构 */
+            TcpServer(EventLoop * loop_, const std::string& addr, int port); /* TODO : 灏佽鍦板潃缁撴瀯 */
             ~TcpServer();
 
             void Start();

@@ -22,7 +22,7 @@ namespace fx
     Poller::Poller()
     {
         epoll_fd_ = epoll_create(max_fd_count_);
-        events_.resize( 20 );                   /* 默认大小20 */
+        events_.resize( 20 );                   /* 榛樿澶у皬20 */
     }
 
     Poller::~Poller()
@@ -41,17 +41,17 @@ namespace fx
             FillActiveChannels( nevents, active_channels );
             if( static_cast<unsigned>(nevents) == events_.size() )
             {
-                /* 该扩容了 */
+                /* 璇ユ墿瀹逛簡 */
                 events_.resize( events_.size() * 2 );
             }
         }
         else if( nevents == 0 )
         {
-            /* 啥都没发生，目测超时 */
+            /* 鍟ラ兘娌″彂鐢燂紝鐩祴瓒呮椂 */
         }
         else
         {
-            /* 出错了呗 */
+            /* 鍑洪敊浜嗗憲 */
             assert( false );
         }
         return now;
@@ -63,7 +63,7 @@ namespace fx
 
         if( iter == channels_.end() )
         {
-            /* 添加新的channel */
+            /* 娣诲姞鏂扮殑channel */
             epoll_event ev;
             ev.data.fd = channel->fd();
             ev.events = channel->events();
@@ -73,7 +73,7 @@ namespace fx
         }
         else
         {
-            /* 更新已经存在的channel */
+            /* 鏇存柊宸茬粡瀛樺湪鐨刢hannel */
             epoll_event ev;
             ev.data.fd = channel->fd();
             ev.events = channel->events();

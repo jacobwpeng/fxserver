@@ -65,7 +65,7 @@ namespace fx
 
         if( nccb_ ) 
         {
-            loop->RunInLoop( boost::bind( nccb_, conn ) ); /* FIXME : 与conn->EnableReading存在时序问题 */
+            loop->RunInLoop( boost::bind( nccb_, conn ) );
         }
         conn->StartReading();
     }
