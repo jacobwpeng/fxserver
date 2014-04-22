@@ -20,3 +20,4 @@ ADD_EXECUTABLE( ${BIN} ${SRC_LIST} )
 TARGET_LINK_LIBRARIES( ${BIN} "fx" ${GTEST} ${PTHREAD} ${GLOG})
     #                        ${GLOG} 
     #                        ${Boost_LIBRARIES}
+ADD_TEST("gtest-all" ${BIN})
