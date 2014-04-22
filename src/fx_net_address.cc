@@ -37,7 +37,7 @@ namespace fx
     NetAddress::NetAddress( const sockaddr_in & sa )
     {
         char buf[INET_ADDRSTRLEN];
-        inet_ntop(AF_INET, &(sa.sin_addr), buf, INET_ADDRSTRLEN);
+        PCHECK( inet_ntop(AF_INET, &(sa.sin_addr), buf, INET_ADDRSTRLEN) != NULL ) << "inet_ntop failed";
 
         port_ = ntohs(sa.sin_port);
         addr_ = buf;
@@ -62,7 +62,8 @@ namespace fx
 
         sa.sin_family = AF_INET;
         sa.sin_port = htons(port_);
-        sa.sin_addr.s_addr = inet_addr(addr_.c_str());
+        int ret = inet_pton( AF_INET, addr_.c_str(), &sa.sin_addr );
+        PCHECK( ret == 1 ) << "inet_pton failed, ret = " << ret << ", addr_ = " << addr_;
 
         return sa;
     }
