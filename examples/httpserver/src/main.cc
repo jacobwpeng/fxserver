@@ -18,6 +18,8 @@
 #include <boost/function.hpp>
 #include <boost/format.hpp>
 #include <boost/algorithm/string.hpp>
+#include <boost/range/adaptor/map.hpp>
+#include <boost/range/algorithm/copy.hpp>
 #include <glog/logging.h>
 
 #include "fx_event_loop.h"
@@ -84,6 +86,14 @@ class HTTPRequest
             return boost::str( boost::format("%u.%u") % major_version_ % minor_version_ );
         }
 
+        StringList HeaderNames() const
+        {
+            StringList keys;
+            // Retrieve all keys
+            boost::copy( headers_ | boost::adaptors::map_keys, std::back_inserter(keys));
+            return keys;
+        }
+
         optional<string> GetHeader(const string& header_name) const
         {
             optional<string> res;
@@ -96,6 +106,8 @@ class HTTPRequest
             return res;
         }
         unsigned HeaderLength() const { return len_; }
+        string request_type() const { return request_type_; }
+        string request_path() const { return request_path_; }
 
     private:
         unsigned len_;
@@ -125,12 +137,11 @@ class HTTPCodec
             /* parse the http header only */
             (void)conn;
             OptionalHTTPRequest optional_req = TryParseHTTPHeader( buf->ReadBegin(), buf->BytesToRead() );
-            if( optional_req and rcb_ )
-            {
-                const HTTPRequest & req = optional_req.get();
-                buf->ConsumeBytes( req.HeaderLength() ); /* we just read that long */
-                rcb_( optional_req.get() );
-            }
+            if( !optional_req ) return;
+
+            const HTTPRequest & req = optional_req.get();
+            buf->ConsumeBytes( req.HeaderLength() ); /* we just read that long */
+            if( rcb_ ) rcb_( optional_req.get() );
         }
 
     private:
@@ -224,7 +235,15 @@ class HTTPServer
 
         void OnRequest( const HTTPRequest & req )
         {
-            LOG(INFO) << "request version : " << req.HTTPVersion();
+            LOG(INFO) << "request type : " << req.request_type();
+            LOG(INFO) << "request path : " << req.request_path();
+            LOG(INFO) << "HTTP version : " << req.HTTPVersion();
+            StringList keys = req.HeaderNames();
+            for( size_t idx = 0; idx != keys.size(); ++idx )
+            {
+                optional<string> opt_val = req.GetHeader(keys[idx]);
+                LOG(INFO) << keys[idx] << " : " << opt_val.get();
+            }
         }
 
     private:
@@ -240,7 +259,7 @@ int main(int argc, char * argv[])
     UNUSED(argc);
     google::InitGoogleLogging(argv[0]);
     EventLoop loop;
-    HTTPServer http_server(&loop, NetAddress("0.0.0.0", 9026), 8 );
+    HTTPServer http_server(&loop, NetAddress("0.0.0.0", 9999), 8 );
 
     http_server.Run();
     loop.Run();

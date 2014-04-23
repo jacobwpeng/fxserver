@@ -124,7 +124,7 @@ namespace fx
           )
         {
             /* 客户端断开连接 */
-            PLOG(INFO) << "passive close connection, fd = " << fd_;
+            LOG(INFO) << "passive close connection, fd = " << fd_;
             PassiveClose();
         }
         else
