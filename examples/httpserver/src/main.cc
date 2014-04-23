@@ -121,7 +121,7 @@ class HTTPRequest
 class HTTPCodec
 {
     public:
-        typedef boost::function< void(const HTTPRequest& req) > RequestCallback;
+        typedef boost::function< void(TcpConnectionPtr conn, const HTTPRequest& req) > RequestCallback;
 
     private:
         typedef optional<HTTPRequest> OptionalHTTPRequest;
@@ -135,13 +135,12 @@ class HTTPCodec
         void OnMessage(TcpConnectionPtr conn, Buffer * buf)
         {
             /* parse the http header only */
-            (void)conn;
             OptionalHTTPRequest optional_req = TryParseHTTPHeader( buf->ReadBegin(), buf->BytesToRead() );
             if( !optional_req ) return;
 
             const HTTPRequest & req = optional_req.get();
             buf->ConsumeBytes( req.HeaderLength() ); /* we just read that long */
-            if( rcb_ ) rcb_( optional_req.get() );
+            if( rcb_ ) rcb_( conn, optional_req.get() );
         }
 
     private:
@@ -223,7 +222,7 @@ class HTTPServer
         {
             tcp_server_.reset( new TcpServer(loop, bind_addr) );
             codec_.reset( new HTTPCodec );
-            codec_->set_request_callback( boost::bind(&HTTPServer::OnRequest, this, _1) );
+            codec_->set_request_callback( boost::bind(&HTTPServer::OnRequest, this, _1, _2) );
         }
 
         void Run()
@@ -233,8 +232,9 @@ class HTTPServer
             tcp_server_->Start();
         }
 
-        void OnRequest( const HTTPRequest & req )
+        void OnRequest(TcpConnectionPtr conn, const HTTPRequest & req )
         {
+            (void)conn;
             LOG(INFO) << "request type : " << req.request_type();
             LOG(INFO) << "request path : " << req.request_path();
             LOG(INFO) << "HTTP version : " << req.HTTPVersion();
