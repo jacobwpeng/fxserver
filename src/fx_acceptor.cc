@@ -35,7 +35,11 @@ namespace fx
 
     Acceptor::~Acceptor()
     {
-        if( listen_channel_ ) close( listen_channel_->fd() );
+        if( listen_channel_ )
+        {
+            listen_channel_->Remove();
+            close( listen_channel_->fd() );
+        }
     }
 
     void Acceptor::set_new_connection_callback( NewConnectionCallback nccb )

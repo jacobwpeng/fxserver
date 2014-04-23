@@ -100,7 +100,8 @@ namespace fx
 
         if( cccb_ ) 
         {
-            conn->loop()->RunInLoop( boost::bind(cccb_, conn ) ); /* must run in the IO thread which conn belongs to */
+             /* must run in the IO thread which conn belongs to */
+            conn->loop()->RunInLoop( boost::bind(cccb_, conn ) );
         }
         conn->loop()->QueueInLoop( boost::bind( &TcpConnection::Destroy, conn ) );
     }

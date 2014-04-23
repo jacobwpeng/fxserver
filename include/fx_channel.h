@@ -32,6 +32,7 @@ namespace fx
             int fd() const { return fd_; }
             int events() const { return events_; }
 
+            void Remove();
             void HandleEvents();
 
             /* 事件相关 */
@@ -49,7 +50,6 @@ namespace fx
 
         private:
             void Update();
-            void Remove();
             void PrintEvents(int events_mask);
 
         private:

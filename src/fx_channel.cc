@@ -30,7 +30,6 @@ namespace fx
 
     Channel::~Channel()
     {
-        Remove();
     }
 
     void Channel::HandleEvents()

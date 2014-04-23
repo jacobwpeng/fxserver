@@ -59,6 +59,7 @@ namespace fx
         InitiallyAdjustTimers();
 
         int timeout = timer_mgr_->NextTimeout( start_time );
+        LOG(INFO) << "functors_.size() = " << functors_.size();
 
         while( not quit_ )
         {
