@@ -59,14 +59,11 @@ namespace fx
         InitiallyAdjustTimers();
 
         int timeout = timer_mgr_->NextTimeout( start_time );
-        LOG(INFO) << "functors_.size() = " << functors_.size();
 
         while( not quit_ )
         {
             TimeStamp now = poller_->Poll( timeout, &channels );
             ++iteration_;
-            LOG(INFO) << "iteration_ = " << iteration_ 
-                << ", channels.size() = " << channels.size();
 
             for( ChannelList::iterator iter = channels.begin(); iter != channels.end(); 
                     ++iter )
