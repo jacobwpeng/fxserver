@@ -21,9 +21,11 @@
 #include "fx_buffer.h"
 #include "fx_tcp_connection.h"
 #include "http_request.h"
+#include "http_request_parsing_state.h"
 
 class HTTPRequest;
 class HTTPResponse;
+struct HTTPRequestParsingState;
 using std::map;
 using std::string;
 using fx::Buffer;
@@ -35,24 +37,34 @@ class HTTPCodec
 {
     public:
         typedef boost::function< void(TcpConnectionPtr conn, const HTTPRequest& req) > RequestCallback;
+        typedef boost::function< void(TcpConnectionPtr conn, const HTTPResponse& res) > ErrorCallback;
 
     public:
         HTTPCodec();
 
-        void set_request_callback( RequestCallback rcb ) { rcb_ = rcb; }
+        void set_request_callback( const RequestCallback & rcb ) { rcb_ = rcb; }
+        void set_error_callback( const ErrorCallback & ecb ) { ecb_ = ecb; }
+        void OnNewConnection( TcpConnectionPtr conn );
         void OnMessage(TcpConnectionPtr conn, Buffer * buf);
         string EncodeResponse( const HTTPResponse & res );
 
     private:
-        OptionalHTTPRequest TryParseHTTPHeader( const char* buf, size_t len );
-        void ParseHTTPRequestLine( const string& line, HTTPRequest * req );
-        void ParseHTTPRequestHeaders( const StringList & headers, HTTPRequest * req );
+        /* TODO : use const shared_ptr? */
+        ParseResult StartParsing( HTTPRequestParsingState * state, Buffer* buf);
+        ParseResult ReadRequestLine( HTTPRequestParsingState * state, Buffer* buf);
+        ParseResult ReadRequestHeader( HTTPRequestParsingState * state, Buffer* buf);
+        ParseResult ReadRequestBody( HTTPRequestParsingState * state, Buffer* buf);
 
     private:
+        static const char CR = '\r';
+        static const char LF = '\n';
         static const char * HEADER_SEP;
         static const char * HEADER_BODY_SEP;
+        static const size_t HEADER_SEP_LEN = 2;
+        static const size_t HEADER_BODY_SEP_LEN = 4;
         map<unsigned, string> status_to_reason_;
         RequestCallback rcb_;
+        ErrorCallback ecb_;
 
 };
 

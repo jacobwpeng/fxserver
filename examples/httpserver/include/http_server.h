@@ -21,6 +21,7 @@
 #include <boost/scoped_ptr.hpp>
 
 class HTTPRequest;
+class HTTPResponse;
 using fx::TcpConnectionPtr;
 using fx::EventLoop;
 using fx::NetAddress;
@@ -32,6 +33,7 @@ class HTTPServer
         HTTPServer(EventLoop * loop, const NetAddress & bind_addr, size_t thread_num);
         void Run();
         void OnRequest(TcpConnectionPtr conn, const HTTPRequest & req );
+        void OnParseHeaderError(TcpConnectionPtr conn, const HTTPResponse & res );
 
     private:
         EventLoop * loop_;

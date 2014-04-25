@@ -21,14 +21,13 @@ using std::string;
 class HTTPResponse
 {
     public:
-        HTTPResponse();
+        HTTPResponse(unsigned status);
 
-        void set_status( unsigned status ) { status_ = status; }
-        void SetHTTPVersion( unsigned major_version, unsigned minor_version )
-        {
-            major_version_ = major_version;
-            minor_version_ = minor_version;
-        }
+        //void SetHTTPVersion( unsigned major_version, unsigned minor_version )
+        //{
+        //    major_version_ = major_version;
+        //    minor_version_ = minor_version;
+        //}
         bool AddHeader(const string& key, const string& val);
 
         string HTTPVersion() const;

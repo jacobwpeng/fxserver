@@ -12,8 +12,8 @@
 #include "http_response.h"
 #include <boost/format.hpp>
 
-HTTPResponse::HTTPResponse()
-    :status_(0), major_version_(0), minor_version_(0)
+HTTPResponse::HTTPResponse(unsigned status)
+    :status_(status), major_version_(1), minor_version_(0)
 {
 
 }

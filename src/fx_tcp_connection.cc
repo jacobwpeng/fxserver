@@ -47,7 +47,7 @@ namespace fx
 
     TcpConnection::~TcpConnection()
     {
-        LOG(INFO) << "TcpConnection Destroyed.";
+        LOG(INFO) << "TcpConnection::~TcpConnection";
         close(fd_);
     }
 
@@ -100,7 +100,7 @@ namespace fx
         assert( state_ == kDisconnected );
         loop_->AssertInLoopThread();
         channel_->Remove();
-        LOG(INFO) << "TcpConnection::Destroy, shared_from_this().use_count() = " << shared_from_this().use_count();;
+        LOG(INFO) << "TcpConnection::Destroy";
     }
 
     void TcpConnection::ReadFromPeer()

@@ -82,6 +82,7 @@ namespace fx
             loop->RunInLoop( boost::bind( nccb_, conn ) );
         }
         conn->StartReading();
+        LOG(INFO) << "New Connection, client addr = " << conn->PeerAddr();
     }
 
     void TcpServer::OnConnectionClosed(int fd)
@@ -104,5 +105,6 @@ namespace fx
             conn->loop()->RunInLoop( boost::bind(cccb_, conn ) );
         }
         conn->loop()->QueueInLoop( boost::bind( &TcpConnection::Destroy, conn ) );
+        LOG(INFO) << "close Connection, client addr = " << conn->PeerAddr();
     }
 }

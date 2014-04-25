@@ -10,13 +10,15 @@
  */
 
 #include "http_request.h"
+#include <ostream>
 #include <boost/format.hpp>
+#include <boost/foreach.hpp>
 #include <boost/optional.hpp>
 #include <boost/range/adaptor/map.hpp>
 #include <boost/range/algorithm/copy.hpp>
 
 HTTPRequest::HTTPRequest()
-    :len_(0), major_version_(0), minor_version_(0)
+    :header_length_(0), body_length_(0), major_version_(0), minor_version_(0)
 {
 
 }
@@ -53,4 +55,18 @@ optional<string> HTTPRequest::GetHeader(const string& header_name) const
         res.reset( iter->second );
     }
     return res;
+}
+
+ostream & operator<< (ostream& os, const HTTPRequest & req )
+{
+    os << "request type: " << req.request_type() << '\n';
+    os << "request path: " << req.request_path() << '\n';
+    os << "http version: " << req.HTTPVersion() << '\n';
+    os << "header length: " << req.header_length() << '\n';
+    os << "body length: " << req.body_length() << '\n';
+    BOOST_FOREACH( const string& key, req.HeaderNames() )
+    {
+        os << key << ": " << req.GetHeader(key).get() << '\n';
+    }
+    return os;
 }
