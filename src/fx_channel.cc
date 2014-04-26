@@ -41,7 +41,7 @@ namespace fx
             {
                 LOG(WARNING) << "Got error for fd = " << fd_;
             }
-            socketop::GetAndClearError(fd_);
+            //socketop::GetAndClearError(fd_);
         }
 
         if( revents_ & (EPOLLOUT|EPOLLWRNORM) )

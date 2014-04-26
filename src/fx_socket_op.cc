@@ -30,16 +30,12 @@ namespace fx
             PCHECK( fcntl(fd, F_SETFL, opts) >= 0 ) << "set opts failed!";
         }
 
-        void GetAndClearError( int fd )
+        int GetAndClearError( int fd )
         {
             int so_error;
             socklen_t slen = sizeof(so_error);
             getsockopt(fd, SOL_SOCKET, SO_ERROR, &so_error, &slen);
-            if( so_error != 0 )
-            {
-                LOG(WARNING) << "Socket Error : " << strerror(so_error)
-                    << ", fd = " << fd;
-            }
+            return so_error;
         }
 
         void DisableReading( int fd )

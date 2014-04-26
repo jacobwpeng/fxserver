@@ -80,9 +80,17 @@ namespace fx
     void TcpConnection::ActiveClose()
     {
         assert( state_ != kDisconnected );
+        if( state_ == kConnected )
+        {
+            channel_->DisableReading();
+            socketop::DisableReading( fd_ );
+        }
+        else if( state_ == kConnecting )
+        {
+            channel_->DisableWriting();
+        }
+
         state_ = kDisconnected;
-        channel_->DisableReading();
-        socketop::DisableReading( fd_ );
         if( ccb_ ) ccb_( fd_ );
     }
 
@@ -185,16 +193,26 @@ namespace fx
     void TcpConnection::ConnectedToPeer()
     {
         assert( state_ == kConnecting );
-        state_ = kConnected;
+        int so_error = socketop::GetAndClearError(fd_);
+        if( so_error != 0 )
+        {
+            LOG(WARNING) << "Socket Error : " << strerror(so_error)
+                << ", fd = " << fd_;
+            ActiveClose();
+        }
+        else
+        {
+            state_ = kConnected;
 
-        GetAddress();
+            GetAddress();
 
-        channel_->EnableReading();
-        channel_->set_read_callback( boost::bind( &TcpConnection::ReadFromPeer, this ) );
-        channel_->DisableWriting();
-        channel_->set_write_callback( boost::bind( &TcpConnection::WriteToPeer, this ) );
+            channel_->EnableReading();
+            channel_->set_read_callback( boost::bind( &TcpConnection::ReadFromPeer, this ) );
+            channel_->DisableWriting();
+            channel_->set_write_callback( boost::bind( &TcpConnection::WriteToPeer, this ) );
 
-        if( connected_callback_ ) connected_callback_( shared_from_this() );
+            if( connected_callback_ ) connected_callback_( shared_from_this() );
+        }
     }
 
     void TcpConnection::GetAddress()

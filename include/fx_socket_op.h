@@ -20,7 +20,7 @@ namespace fx
     namespace socketop
     {
         void SetNonblocking(int fd);
-        void GetAndClearError( int fd );
+        int GetAndClearError( int fd );
         void DisableReading( int fd );
         void DisableWriting( int fd );
         void DisableReadingAndWriting( int fd );
