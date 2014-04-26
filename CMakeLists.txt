@@ -25,6 +25,7 @@ FIND_LIBRARY(GLOG "glog")
 FIND_PACKAGE(Boost COMPONENTS REQUIRED system thread)
 LIST(APPEND FX_SRC_LIST 
         src/fx_base.cc
+        src/fx_slice.cc
         src/fx_socket_op.cc
         src/fx_buffer.cc
         src/fx_net_address.cc
