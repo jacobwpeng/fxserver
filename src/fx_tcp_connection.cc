@@ -16,6 +16,7 @@
 #include <boost/bind.hpp>
 #include <glog/logging.h>
 
+#include "fx_slice.h"
 #include "fx_channel.h"
 #include "fx_event_loop.h"
 #include "fx_socket_op.h"
@@ -61,8 +62,14 @@ namespace fx
         Write( content.c_str(), content.length() );
     }
 
-    void TcpConnection::Write( const char * buf, size_t len )
+    void TcpConnection::Write(const Slice& slice)
     {
+        Write( slice.data(), slice.size() );
+    }
+
+    void TcpConnection::Write(const char * buf, size_t len)
+    {
+        loop_->AssertInLoopThread();
         write_buf_.Append( buf, len );
         channel_->EnableWriting();
     }
@@ -113,6 +120,7 @@ namespace fx
 
     void TcpConnection::ReadFromPeer()
     {
+        loop_->AssertInLoopThread();
         const size_t local_buf_len = 1 << 16;   /* 64k stack buf */
         char buf[ local_buf_len ];
         const int iovcnt = 2;
@@ -155,6 +163,7 @@ namespace fx
 
     void TcpConnection::WriteToPeer()
     {
+        loop_->AssertInLoopThread();
         size_t bytes_to_read = write_buf_.BytesToRead();
 
         while( bytes_to_read != 0 )

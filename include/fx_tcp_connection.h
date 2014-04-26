@@ -22,6 +22,7 @@
 
 namespace fx
 {
+    class Slice;
     class Channel;
     class EventLoop;
     class NetAddress;
@@ -35,12 +36,13 @@ namespace fx
         kDisconnected = 3
     };
 
-    class TcpConnection : boost::noncopyable, public boost::enable_shared_from_this<TcpConnection>
+    class TcpConnection : boost::noncopyable, 
+                        public boost::enable_shared_from_this<TcpConnection>
     {
         public:
-            typedef boost::function< void( TcpConnectionPtr conn ) > ConnectedCallback;
-            typedef boost::function< void( TcpConnectionPtr conn, Buffer * buf) > ReadCallback;
-            typedef boost::function< void( int ) > CloseCallback;
+            typedef boost::function< void(TcpConnectionPtr) > ConnectedCallback;
+            typedef boost::function< void(TcpConnectionPtr, Buffer*) > ReadCallback;
+            typedef boost::function< void(int) > CloseCallback;
             typedef boost::any Context;
 
         public:
@@ -55,16 +57,22 @@ namespace fx
 
             void Write( const std::string& content );
             void Write( const char * buf, size_t len );
+            void Write( const Slice& slice );
 
             void set_context( const Context & ctx ) { ctx_ = ctx; }
             Context context() const { return ctx_; }
-            void set_connected_callback( ConnectedCallback connected_callback) { connected_callback_ = connected_callback; }
+            void set_connected_callback(ConnectedCallback connected_callback)
+            { connected_callback_ = connected_callback; }
+
             void set_read_callback( ReadCallback rcb );
             void set_close_callback( CloseCallback ccb );
-            /* 设置连接状态为kDisconnected，但是不会马上关闭描述符，因为发送缓冲区中可能还有东西没有发 */
+            /* 
+             * 设置连接状态为kDisconnected，但是不会马上关闭描述符
+             * 因为发送缓冲区中可能还有东西没有发 
+             */
             void ActiveClose();
             void PassiveClose();
-            /* 干掉自己 */
+            /* 干掉自己, 应该是生命周期内最后调用的函数*/
             void Destroy();
 
             int fd() const;
