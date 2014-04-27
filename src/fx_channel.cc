@@ -23,17 +23,19 @@ namespace fx
     const int Channel::kNoneEvents = 0;
 
     Channel::Channel(EventLoop * loop, int fd)
-        :loop_(loop), fd_(fd), events_(0), revents_(0)
+        :loop_(loop), fd_(fd), events_(0), revents_(0), handling_events_(false)
     {
 
     }
 
     Channel::~Channel()
     {
+        assert( not handling_events_ );
     }
 
     void Channel::HandleEvents()
     {
+        handling_events_ = true;
         if( revents_ & (EPOLLERR|EPOLLHUP) )
         {
             if( ecb_ ) ecb_();
@@ -53,8 +55,7 @@ namespace fx
         {
             if( rcb_ ) rcb_();
         }
-        //PrintEvents(revents_);
-        revents_ = 0;
+        handling_events_ = false;
     }
 
     void Channel::Update()

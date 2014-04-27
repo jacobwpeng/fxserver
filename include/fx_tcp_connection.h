@@ -28,6 +28,7 @@ namespace fx
     class NetAddress;
     class TcpConnection;
     typedef boost::shared_ptr<TcpConnection> TcpConnectionPtr;
+    typedef boost::weak_ptr<TcpConnection> TcpConnectionWeakPtr;
 
     enum TcpConnectionState
     {
@@ -43,6 +44,7 @@ namespace fx
             typedef boost::function< void(TcpConnectionPtr) > ConnectedCallback;
             typedef boost::function< void(TcpConnectionPtr, Buffer*) > ReadCallback;
             typedef boost::function< void(int) > CloseCallback;
+            typedef boost::function< void(void) > WriteDoneCallback;
             typedef boost::any Context;
 
         public:
@@ -60,12 +62,17 @@ namespace fx
             void Write( const Slice& slice );
 
             void set_context( const Context & ctx ) { ctx_ = ctx; }
+            void clear_context() { ctx_ = Context(); }
             Context context() const { return ctx_; }
+
             void set_connected_callback(ConnectedCallback connected_callback)
             { connected_callback_ = connected_callback; }
-
-            void set_read_callback( ReadCallback rcb );
-            void set_close_callback( CloseCallback ccb );
+            void set_read_callback( ReadCallback rcb )
+            { rcb_ = rcb; }
+            void set_close_callback( CloseCallback ccb )
+            { ccb_ = ccb; }
+            void set_write_done_callback( WriteDoneCallback wdcb )
+            { wdcb_ = wdcb; }
             /* 
              * 设置连接状态为kDisconnected，但是不会马上关闭描述符
              * 因为发送缓冲区中可能还有东西没有发 
@@ -96,6 +103,7 @@ namespace fx
             ReadCallback rcb_;
             CloseCallback ccb_;
             ConnectedCallback connected_callback_;
+            WriteDoneCallback wdcb_;
             boost::scoped_ptr<Channel> channel_;
             boost::scoped_ptr<NetAddress> local_addr_;
             boost::scoped_ptr<NetAddress> peer_addr_;

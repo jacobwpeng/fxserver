@@ -35,6 +35,9 @@ namespace fx
             void Remove();
             void HandleEvents();
 
+            bool is_reading() const { return (events_ & kReadEvents) != 0; }
+            bool is_writing() const { return (events_ & kWriteEvents) != 0; }
+
             /* 事件相关 */
             void set_revents( int revents ) { revents_ = revents; }
             void EnableReading() { events_ |= kReadEvents; Update(); }
@@ -62,6 +65,7 @@ namespace fx
 
             int events_;
             int revents_;
+            bool handling_events_;
             ReadCallback rcb_;
             WriteCallback wcb_;
             ErrorCallback ecb_;

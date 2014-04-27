@@ -74,16 +74,6 @@ namespace fx
         channel_->EnableWriting();
     }
 
-    void TcpConnection::set_read_callback(ReadCallback rcb)
-    {
-        rcb_ = rcb;
-    }
-
-    void TcpConnection::set_close_callback( CloseCallback ccb )
-    {
-        ccb_ = ccb;
-    }
-
     void TcpConnection::ActiveClose()
     {
         assert( state_ != kDisconnected );
@@ -114,8 +104,9 @@ namespace fx
     {
         assert( state_ == kDisconnected );
         loop_->AssertInLoopThread();
+        socketop::DisableWriting( fd_ );
         channel_->Remove();
-        LOG(INFO) << "TcpConnection::Destroy";
+        LOG(INFO) << "TcpConnection::Destroy, use_count() = " << (shared_from_this().use_count() - 1);
     }
 
     void TcpConnection::ReadFromPeer()
@@ -191,7 +182,11 @@ namespace fx
         }
 
         /* only disable writing when all contents have been written to socket */
-        if( bytes_to_read == 0 ) channel_->DisableWriting();
+        if( bytes_to_read == 0 )
+        {
+            channel_->DisableWriting();
+            if( wdcb_ ) wdcb_();
+        }
     }
 
     void TcpConnection::HandleError()
