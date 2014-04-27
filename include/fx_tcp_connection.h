@@ -60,6 +60,7 @@ namespace fx
             void Write( const std::string& content );
             void Write( const char * buf, size_t len );
             void Write( const Slice& slice );
+            void ZeroCopyWrite(int fd, off_t offset, size_t len);
 
             void set_context( const Context & ctx ) { ctx_ = ctx; }
             void clear_context() { ctx_ = Context(); }
@@ -94,6 +95,7 @@ namespace fx
             void HandleError();
             void ConnectedToPeer();
             void GetAddress();
+            void ClearZeroCopyWrite();
 
         private:
             EventLoop * loop_;
@@ -109,6 +111,10 @@ namespace fx
             boost::scoped_ptr<NetAddress> peer_addr_;
             Buffer read_buf_;
             Buffer write_buf_;
+            int zero_copy_write_fd_;
+            off_t zero_copy_write_offset_;
+            size_t zero_copy_len_;
+            size_t zero_copy_writed_len_;
             Context ctx_;
     };
 

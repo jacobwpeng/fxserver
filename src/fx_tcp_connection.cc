@@ -12,6 +12,7 @@
 #include "fx_tcp_connection.h"
 
 #include <sys/uio.h>
+#include <sys/sendfile.h>
 
 #include <boost/bind.hpp>
 #include <glog/logging.h>
@@ -27,6 +28,7 @@ namespace fx
     TcpConnection::TcpConnection( EventLoop * loop, int fd, TcpConnectionState state)
         :loop_(loop), fd_(fd), state_( state )
     {
+        ClearZeroCopyWrite();
         channel_.reset( new Channel(loop, fd) );
         if( state_ == kConnecting )
         {
@@ -72,6 +74,14 @@ namespace fx
         loop_->AssertInLoopThread();
         write_buf_.Append( buf, len );
         channel_->EnableWriting();
+    }
+
+    void TcpConnection::ZeroCopyWrite(int fd, off_t offset, size_t len)
+    {
+        zero_copy_write_fd_ = fd;
+        zero_copy_write_offset_ = offset;
+        zero_copy_len_ = len;
+        zero_copy_writed_len_ = 0;
     }
 
     void TcpConnection::ActiveClose()
@@ -181,9 +191,35 @@ namespace fx
             bytes_to_read = write_buf_.BytesToRead();
         }
 
-        /* only disable writing when all contents have been written to socket */
-        if( bytes_to_read == 0 )
+        while( zero_copy_write_fd_ != -1 and zero_copy_writed_len_ != zero_copy_len_)
         {
+            assert( zero_copy_writed_len_ <= zero_copy_len_ );
+            size_t bytes_left = zero_copy_len_ - zero_copy_writed_len_;
+            ssize_t bytes_write = sendfile( fd_, zero_copy_write_fd_, &zero_copy_write_offset_, bytes_left );
+            if( bytes_write == -1 )
+            {
+                if( errno == EAGAIN or errno == EWOULDBLOCK )
+                {
+                    LOG(WARNING) << "sendfile would block";
+                }
+                else if( state_ == kDisconnected )
+                {
+                }
+                else
+                {
+                    ActiveClose();
+                }
+                break;
+            }
+            assert( bytes_write >= 0 );
+            assert( static_cast<size_t>(bytes_write) <= bytes_left);
+            zero_copy_writed_len_ += bytes_write;
+        }
+
+        /* only disable writing when all contents have been written to socket */
+        if( bytes_to_read == 0 and (zero_copy_write_fd_ == -1 or zero_copy_len_ == zero_copy_writed_len_) )
+        {
+            if( zero_copy_write_fd_ != -1 ) ClearZeroCopyWrite();
             channel_->DisableWriting();
             if( wdcb_ ) wdcb_();
         }
@@ -229,6 +265,14 @@ namespace fx
 
         local_addr_.reset( new NetAddress(NetAddress::GetLocalAddr(fd_) ) );
         peer_addr_.reset( new NetAddress(NetAddress::GetPeerAddr(fd_) ) );
+    }
+
+    void TcpConnection::ClearZeroCopyWrite()
+    {
+        zero_copy_write_fd_ = -1;
+        zero_copy_write_offset_ = 0;
+        zero_copy_len_ = 0u;
+        zero_copy_writed_len_ = 0u;
     }
 
     int TcpConnection::fd() const 
