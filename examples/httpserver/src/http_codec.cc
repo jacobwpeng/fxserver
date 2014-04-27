@@ -10,43 +10,18 @@
  */
 
 #include "http_codec.h"
-#include "http_response.h"
 
 #include <boost/bind.hpp>
 #include <boost/format.hpp>
 #include <boost/optional.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/make_shared.hpp>
-#include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>
-#include <boost/date_time/posix_time/posix_time.hpp>
-#include <boost/date_time/posix_time/posix_time_io.hpp>
+#include <boost/algorithm/string.hpp>
 #include <glog/logging.h>
 
-namespace detail
-{
-    void SplitString( const string& src, const string& sep, StringList * res)
-    {
-        typedef boost::split_iterator<string::const_iterator> StringSplitIterator;
-        for (StringSplitIterator iter = boost::make_split_iterator(src, boost::first_finder(sep, boost::is_equal()));
-                                 iter != StringSplitIterator();
-                                 ++iter
-            )
-        {
-            res->push_back( boost::copy_range<string>(*iter) );
-        }
-    }
-
-    string Rfc1123_DateTimeNow()
-    {
-        std::stringstream ss;
-        using namespace boost::posix_time;
-        time_facet *facet = new time_facet("%a, %d %b %Y %H:%M:%S GMT");
-        ss.imbue( std::locale( ss.getloc(), facet ) );
-        ss << second_clock::universal_time();
-        return ss.str();
-    }
-}
+#include "http_response.h"
+#include "http_utilities.h"
 
 const char* HTTPCodec::HEADER_SEP = "\r\n";
 const char* HTTPCodec::HEADER_BODY_SEP = "\r\n\r\n";
@@ -121,6 +96,7 @@ void HTTPCodec::OnMessage(TcpConnectionPtr conn, Buffer * buf)
     else
     {
         /* parse header done */
+        conn->clear_context();
         if( rcb_ ) rcb_( conn, state->req );
     }
 }
@@ -128,11 +104,23 @@ void HTTPCodec::OnMessage(TcpConnectionPtr conn, Buffer * buf)
 string HTTPCodec::EncodeResponse( const HTTPResponse& res )
 {
     string reply;
-    reply += boost::str( boost::format("%s %u %s%s") % res.HTTPVersion() % res.status_ % status_to_reason_[res.status_] % HEADER_SEP );
-    reply += boost::str( boost::format("Date: %s%s") % detail::Rfc1123_DateTimeNow() % HEADER_SEP );
+    bool has_body = res.body_length() != 0u;
+    reply += boost::str( boost::format("%s %u %s%s") % res.HTTPVersion() 
+                                                    % res.status_ 
+                                                    % status_to_reason_[res.status_] 
+                                                    % HEADER_SEP );
+
+    reply += boost::str( boost::format("Date: %s%s") % Rfc1123TimeNow() % HEADER_SEP );
     reply += boost::str( boost::format("Server: FX Server/0.0.1%s") % HEADER_SEP );
-    reply += boost::str( boost::format("Content-Type:text/html; charset=iso-8859-1%s") % HEADER_SEP );
+    reply += boost::str( boost::format("Content-Type: text/html%s") % HEADER_SEP );
     reply += boost::str( boost::format("Connection: close%s") % HEADER_SEP );
+
+    if( has_body )
+    {
+        reply += boost::str( boost::format("Content-Length: %u%s") % res.body_length() 
+                                                                % HEADER_SEP );
+        reply += HEADER_SEP;                    /* for response body sep */
+    }
 
     return reply;
 }
@@ -162,7 +150,7 @@ ParseResult HTTPCodec::ReadRequestLine( HTTPRequestParsingState * state, Buffer*
     string request_line = msg.substr(0, pos);
 
     StringList parts;
-    detail::SplitString( request_line, " ", &parts );
+    SplitString( request_line, " ", &parts );
     if( parts.size() != 3 )
     {
         HTTPResponse res(400);                  /* Bad Request */
@@ -171,12 +159,6 @@ ParseResult HTTPCodec::ReadRequestLine( HTTPRequestParsingState * state, Buffer*
     }
 
     const string& request_type = parts[0];
-    if( request_type != "GET" )                 /* support GET only */
-    {
-        HTTPResponse res(501);                  /* Not Implemented */
-        state->res.reset( res );
-        return kParseError;
-    }
     state->req.set_request_type( request_type );
     state->req.set_request_path( parts[1] );
 
@@ -264,7 +246,7 @@ ParseResult HTTPCodec::ReadRequestHeader( HTTPRequestParsingState * state, Buffe
         /* ordinary header line */
         string line = msg.substr( 0, pos );
         StringList kv;
-        detail::SplitString( line, ": ", &kv );
+        SplitString( line, ": ", &kv );
         if( kv.size() != 2 )
         {
             HTTPResponse res(400);                  /* Bad Request */

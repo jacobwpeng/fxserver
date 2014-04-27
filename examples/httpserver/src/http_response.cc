@@ -13,7 +13,7 @@
 #include <boost/format.hpp>
 
 HTTPResponse::HTTPResponse(unsigned status)
-    :status_(status), major_version_(1), minor_version_(0)
+    :status_(status), major_version_(1), minor_version_(0), body_length_(0)
 {
 
 }
@@ -33,4 +33,3 @@ string HTTPResponse::HTTPVersion() const
 {
     return boost::str( boost::format("HTTP/%u.%u") % major_version_ % minor_version_ );
 }
-

@@ -31,6 +31,8 @@ class HTTPRequest
 
         bool AddHeader(const string& key, const string& val);
         string HTTPVersion() const;
+        unsigned major_version() const { return major_version_; }
+        unsigned minor_version() const { return minor_version_; }
         StringList HeaderNames() const;
         optional<string> GetHeader(const string& header_name) const;
 

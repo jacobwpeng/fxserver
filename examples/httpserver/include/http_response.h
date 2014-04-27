@@ -29,8 +29,11 @@ class HTTPResponse
         //    minor_version_ = minor_version;
         //}
         bool AddHeader(const string& key, const string& val);
+        void set_body_length( size_t len ) { body_length_ = len; }
+        void set_zero_copy_body() { is_zero_copy_body_ = true; }
 
         string HTTPVersion() const;
+        size_t body_length() const { return body_length_; }
 
     private:
         friend class HTTPCodec;
@@ -39,6 +42,8 @@ class HTTPResponse
         unsigned status_;
         unsigned major_version_;
         unsigned minor_version_;
+        size_t body_length_;
+        bool is_zero_copy_body_;
         map<string, string> headers_;
 };
 
