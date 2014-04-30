@@ -14,6 +14,7 @@ LIST(APPEND SRC_LIST
             gtest-all.cc
             NetAddress/main.cc
             Buffer/main.cc
+            Slice/main.cc
     )
 
 ADD_EXECUTABLE( ${BIN} ${SRC_LIST} )

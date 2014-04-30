@@ -20,6 +20,7 @@
 #include <boost/algorithm/string.hpp>
 #include <glog/logging.h>
 
+#include "fx_slice.h"
 #include "http_response.h"
 #include "http_utilities.h"
 
@@ -27,6 +28,7 @@ const char* HTTPCodec::HEADER_SEP = "\r\n";
 const char* HTTPCodec::HEADER_BODY_SEP = "\r\n\r\n";
 
 typedef boost::shared_ptr<HTTPRequestParsingState> HTTPRequestParsingStatePtr;
+using fx::Slice;
 using fx::TcpConnection;
 
 HTTPCodec::HTTPCodec()
@@ -76,7 +78,7 @@ void HTTPCodec::OnMessage(TcpConnectionPtr conn, Buffer * buf)
     TcpConnection::Context ctx = conn->context();
     HTTPRequestParsingStatePtr state = boost::any_cast<HTTPRequestParsingStatePtr>(ctx);
 
-    ParseResult res;
+    ParseResult res = kParseError;
 
     while( state->status != kParsingDone )
     {
@@ -143,14 +145,14 @@ ParseResult HTTPCodec::ReadRequestLine( HTTPRequestParsingState * state, Buffer*
     assert( state->status == kParsingRequestLine );
     assert( buf != NULL );
 
-    string msg( buf->ReadBegin(), buf->BytesToRead() ); /* TODO : use memchr to avoid massive copies of buf */
+    Slice msg( buf->ReadBegin(), buf->BytesToRead() ); /* TODO : use memchr to avoid massive copies of buf */
     size_t pos = msg.find( HTTPCodec::HEADER_SEP );
 
-    if( pos == string::npos ) return kParseNeedMore;
-    string request_line = msg.substr(0, pos);
+    if( pos == Slice::npos ) return kParseNeedMore;
+    Slice request_line = msg.subslice(0, pos);
 
     StringList parts;
-    SplitString( request_line, " ", &parts );
+    SplitString( Slice::to_string(request_line), " ", &parts );
     if( parts.size() != 3 )
     {
         HTTPResponse res(400);                  /* Bad Request */
@@ -207,9 +209,9 @@ ParseResult HTTPCodec::ReadRequestHeader( HTTPRequestParsingState * state, Buffe
     assert( state->status == kParsingRequestHeader );
     assert( buf != NULL );
 
-    string msg( buf->ReadBegin(), buf->BytesToRead() ); /* TODO : use memchr to avoid massive copies of buf */
+    Slice msg( buf->ReadBegin(), buf->BytesToRead() ); /* TODO : use memchr to avoid massive copies of buf */
     size_t pos = msg.find( HTTPCodec::HEADER_SEP );
-    if( pos == string::npos ) return kParseNeedMore;
+    if( pos == Slice::npos ) return kParseNeedMore;
     else if( pos == 0u )
     {
         /* Blank line, which means header ends here*/
@@ -244,9 +246,9 @@ ParseResult HTTPCodec::ReadRequestHeader( HTTPRequestParsingState * state, Buffe
     else
     {
         /* ordinary header line */
-        string line = msg.substr( 0, pos );
+        Slice line = msg.subslice( 0, pos );
         StringList kv;
-        SplitString( line, ": ", &kv );
+        SplitString( Slice::to_string(line), ": ", &kv );
         if( kv.size() != 2 )
         {
             HTTPResponse res(400);                  /* Bad Request */

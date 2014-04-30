@@ -28,8 +28,6 @@ using namespace fx;
 
 int timeout = 5 * 1000;                        /* milliseconds */
 
-typedef boost::weak_ptr<TcpConnection> TcpConnectionWeakPtr;
-
 void SayGoodbye( TcpConnectionWeakPtr weak_conn )
 {
     TcpConnectionPtr conn = weak_conn.lock();
