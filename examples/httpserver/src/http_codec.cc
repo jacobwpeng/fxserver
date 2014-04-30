@@ -145,7 +145,7 @@ ParseResult HTTPCodec::ReadRequestLine( HTTPRequestParsingState * state, Buffer*
     assert( state->status == kParsingRequestLine );
     assert( buf != NULL );
 
-    Slice msg( buf->ReadBegin(), buf->BytesToRead() ); /* TODO : use memchr to avoid massive copies of buf */
+    Slice msg( buf->ReadBegin(), buf->BytesToRead() );
     size_t pos = msg.find( HTTPCodec::HEADER_SEP );
 
     if( pos == Slice::npos ) return kParseNeedMore;
@@ -209,7 +209,7 @@ ParseResult HTTPCodec::ReadRequestHeader( HTTPRequestParsingState * state, Buffe
     assert( state->status == kParsingRequestHeader );
     assert( buf != NULL );
 
-    Slice msg( buf->ReadBegin(), buf->BytesToRead() ); /* TODO : use memchr to avoid massive copies of buf */
+    Slice msg( buf->ReadBegin(), buf->BytesToRead() );
     size_t pos = msg.find( HTTPCodec::HEADER_SEP );
     if( pos == Slice::npos ) return kParseNeedMore;
     else if( pos == 0u )
