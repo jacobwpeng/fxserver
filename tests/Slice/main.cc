@@ -92,9 +92,14 @@ TEST(SliceTest, TestFind)
 
     EXPECT_TRUE( slice.empty() );
 
-    src = "1212121312121214";
-    p = "12121214";
+    src = "ABAAAABAAAAAAAAA";
+    p = "BAAAAAAAAA";
     slice.assign( src );
 
     EXPECT_TRUE( src.find(p) == slice.find(p.c_str()) );
+
+    src = "agctagcagctagct";
+    p = "agctagct";
+
+    EXPECT_EQ( src.find(p), slice.find(p.c_str()) );
 }

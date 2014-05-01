@@ -96,12 +96,22 @@ namespace fx
                 int base = next[pos-1];
                 if( base == 0 )
                 {
-                    next[pos] = p[pos-1] == p[0] ? 1 : 0;
+                    next[pos] = p[pos] == p[0] ? 1 : 0;
                 }
                 else
                 {
-                    if( p[pos-1] == p[base] ) next[pos] = base + 1;
-                    else next[pos] = 0;
+                    /* base != 0 */
+                    do
+                    {
+                        if( p[pos] == p[base] ) break;
+                        else base = next[base];
+                    }while( base != 0 );
+
+                    if( base != 0 )
+                    {
+                        /* got match */
+                        next[pos] = base + 1;
+                    }
                 }
             }
         }
@@ -126,8 +136,8 @@ namespace fx
             }
             else
             {
-                m += i - next[i];
-                i = next[i];
+                m += i - next[i-1];
+                i = next[i-1];
             }
         }
 #ifndef NDEBUG
