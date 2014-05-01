@@ -42,10 +42,15 @@ namespace fx
             bool empty() const { return buf_ == NULL; }
             const char * data() const { return buf_; }
             size_t size() const { return len_; }
+            /* KMP style find using next array */
             size_t find(const char* p) const;
 
             /* compare the internal buf content */
             bool Equals( const Slice& rhs);
+
+        private:
+            /* KMP style find using DFA */
+            size_t InternalFind( const char * p ) const;
 
         private:
             const char * buf_;

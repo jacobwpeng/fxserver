@@ -13,7 +13,10 @@
 #include "fx_slice.h"
 #include <cassert>
 #include <vector>
+#include <map>
 #include <cstring>
+#include <iostream>
+#include <boost/foreach.hpp>
 
 namespace fx
 {
@@ -159,6 +162,40 @@ namespace fx
     bool Slice::Equals( const Slice& rhs)
     {
         return len_ == rhs.len_ and memcmp(buf_, rhs.buf_, len_) == 0;
+    }
+
+    size_t Slice::InternalFind( const char * p ) const
+    {
+        size_t p_len = strlen(p);
+        typedef std::vector<unsigned> UnsignedList;
+        typedef std::map<char, UnsignedList> DFAType;
+
+        DFAType dfa;
+        for( size_t idx = 0; idx != len_; ++idx )
+            dfa[buf_[idx]].resize(p_len);
+
+        for( size_t idx = 0; idx != p_len; ++idx )
+            dfa[p[idx]].resize(p_len);
+
+        dfa[p[0]][0] = 1;
+        for( size_t idx = 1, x = 0; idx < p_len; ++idx )
+        {
+            for( DFAType::iterator iter = dfa.begin(); iter != dfa.end(); ++iter )
+            {
+                dfa[iter->first][idx] = dfa[iter->first][x];
+            }
+            dfa[ p[idx] ][ idx ] = idx + 1;
+            x = dfa[ p[idx] ][x];
+        }
+
+        size_t idx = 0, m = 0;
+        for( ; idx < this->len_ && m < p_len ; ++idx )
+        {
+            m = dfa[buf_[idx]][m];
+        }
+
+        if( m == p_len ) return idx - p_len;
+        else return npos;
     }
 
     bool operator == (const Slice & lhs, const Slice & rhs )

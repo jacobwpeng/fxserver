@@ -13,8 +13,21 @@
 
 #include <string>
 #include <gtest/gtest.h>
+#include <iostream>
 
 using fx::Slice;
+
+void PrintMatchPos(const string& str, const string& pattern)
+{
+    Slice s(str);
+    size_t pos = s.find(pattern.c_str());
+    if( pos != Slice::npos )
+    {
+        std::cout << str << '\n';
+        std::cout << string(pos, ' ') + '|' << '\n';
+        std::cout << string(pos, ' ') + pattern << '\n';
+    }
+}
 
 TEST(SliceTest, TestConstructorUsingCString)
 {
@@ -85,6 +98,8 @@ TEST(SliceTest, TestFind)
     string p("ABCDABD");
 
     Slice slice(src);
+    
+    PrintMatchPos(src, p);
 
     EXPECT_TRUE( src.find(p) == slice.find(p.c_str()) );
     slice.clear();
@@ -95,17 +110,20 @@ TEST(SliceTest, TestFind)
     p = "BAAAAAAAAA";
     slice.assign( src );
 
+    PrintMatchPos(src, p);
     EXPECT_TRUE( src.find(p) == slice.find(p.c_str()) );
 
     src = "agctagcagctagct";
     p = "agctagct";
     slice.assign( src );
 
+    PrintMatchPos(src, p);
     EXPECT_EQ( src.find(p), slice.find(p.c_str()) );
 
     src = "12345";
     p = "6789";
     slice.assign( src );
 
-    EXPECT_TRUE( slice.find(p.c_str()) == Slice::npos );
+    PrintMatchPos(src, p);
+    EXPECT_TRUE( slice.find("6789") == Slice::npos );
 }
