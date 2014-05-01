@@ -82,10 +82,9 @@ TEST(SliceTest, Testassign)
 TEST(SliceTest, TestFind)
 {
     std::string src("BBC ABCDAB ABCDABCDABDE");
+    string p("ABCDABD");
 
     Slice slice(src);
-
-    string p("ABCDABD");
 
     EXPECT_TRUE( src.find(p) == slice.find(p.c_str()) );
     slice.clear();
@@ -100,6 +99,13 @@ TEST(SliceTest, TestFind)
 
     src = "agctagcagctagct";
     p = "agctagct";
+    slice.assign( src );
 
     EXPECT_EQ( src.find(p), slice.find(p.c_str()) );
+
+    src = "12345";
+    p = "6789";
+    slice.assign( src );
+
+    EXPECT_TRUE( slice.find(p.c_str()) == Slice::npos );
 }

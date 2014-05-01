@@ -104,7 +104,7 @@ namespace fx
                     do
                     {
                         if( p[pos] == p[base] ) break;
-                        else base = next[base];
+                        else base = next[base-1];
                     }while( base != 0 );
 
                     if( base != 0 )
