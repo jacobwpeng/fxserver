@@ -103,7 +103,11 @@ namespace fx
 
     void TcpConnection::PassiveClose()
     {
-        assert( state_ != kDisconnected );
+        if( state_ == kDisconnected )
+        {
+            return;
+        }
+
         state_ = kDisconnected;
         channel_->DisableReading();
         channel_->DisableWriting();
