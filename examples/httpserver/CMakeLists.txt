@@ -13,8 +13,10 @@ LIST(APPEND SRC_LIST
     src/http_request.cc
     src/http_response.cc
     src/http_codec.cc
-    src/http_server.cc
+    src/http_module_request_rewrite.cc
     src/http_module_request_validator.cc
+    src/http_module_file_accessor.cc
+    src/http_server.cc
     src/main.cc
     )
 

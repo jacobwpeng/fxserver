@@ -36,10 +36,8 @@ namespace fx
 
             /* 保证写成功，可能触发容器大小调整 */
             void Append( const char * buf, size_t len );
-
-            std::string ReadAndClear();
-
             void Clear();
+            std::string ReadAndClear();
 
             size_t ByteSize() const;
 

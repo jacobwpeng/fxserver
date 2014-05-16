@@ -11,9 +11,12 @@
  */
 
 #include "http_utilities.h"
+#include <boost/make_shared.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/date_time/posix_time/posix_time_io.hpp>
+
+#include "http_response.h"
 
 void SplitString( const string& src, const string& sep, StringList * res)
 {
@@ -39,4 +42,9 @@ string Rfc1123TimeNow()
     ss.imbue( std::locale( ss.getloc(), facet ) );
     ss << second_clock::universal_time();
     return ss.str();
+}
+
+HTTPResponsePtr MakeResponse( unsigned http_ret_code )
+{
+    return boost::make_shared<HTTPResponse>(http_ret_code);
 }

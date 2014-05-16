@@ -11,11 +11,6 @@
 
 #include "http_server.h"
 
-#include <fcntl.h>
-#include <unistd.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-
 #include <boost/bind.hpp>
 #include <boost/make_shared.hpp>
 #include <boost/foreach.hpp>
@@ -28,20 +23,38 @@ HTTPServer::HTTPServer(EventLoop * loop, const NetAddress & bind_addr, size_t th
 {
     tcp_server_.reset( new TcpServer(loop, bind_addr) );
     codec_.reset( new HTTPCodec );
-    codec_->set_request_callback( boost::bind(&HTTPServer::OnRequest, this, _1, _2) );
-    codec_->set_error_callback(boost::bind(&HTTPServer::OnParseHeaderError, this, _1, _2));
-
-    request_validator_.reset( new HTTPModuleRequestValidator(this) );
+    codec_->set_request_callback( 
+            boost::bind(&HTTPServer::OnRequest, this, _1, _2) );
+    codec_->set_error_callback(
+            boost::bind(&HTTPServer::OnParseHeaderError, this, _1, _2));
 }
 
-void HTTPServer::Run()
+RetCode HTTPServer::InitModules()
 {
+    /* construction orders DOES matters!!! */
+    request_validator_.reset( new HTTPModuleRequestValidator(this) );
+    request_rewriter_.reset( new HTTPModuleRequestRewrite(this) );
+
+    char * cwd = get_current_dir_name();
+    file_accessor_.reset(new HTTPModuleFileAccessor(this, cwd) );
+    LOG(INFO) << "htdocs path : " << cwd;
+    free(cwd);
+    return kOk;
+}
+
+RetCode HTTPServer::Run()
+{
+    RetCode ret = InitModules();
+    if( ret != kOk ) return ret;
+
     tcp_server_->SetThreadNum(thread_num_);
     tcp_server_->set_new_connection_callback( 
                     boost::bind( &HTTPCodec::OnNewConnection, codec_.get(), _1) 
             );
     tcp_server_->set_read_callback( boost::bind(&HTTPCodec::OnMessage, codec_.get(), _1, _2) );
     tcp_server_->Start();
+
+    return kOk;
 }
 
 void HTTPServer::OnRequest(TcpConnectionPtr conn, const HTTPRequest & r )
@@ -93,8 +106,22 @@ void HTTPServer::OnParseHeaderError(TcpConnectionPtr conn, const HTTPResponse & 
 void HTTPServer::WriteResponseAndClose(TcpConnectionPtr conn, const HTTPResponse& res)
 {
     conn->Write( codec_->EncodeResponse(res) );
+    size_t body_len = res.body_length();
+    if( body_len != 0u )
+    {
+        if( res.is_zero_copy_body() ) 
+        {
+            conn->ZeroCopyWrite( res.zero_copy_fd(), 0u, body_len );
+        }
+        else
+        {
+            conn->Write( res.GetConstBodyBuf(), body_len );
+        }
+    }
     /* make sure we write response to the socket buffer before close connection */
-    conn->set_write_done_callback( boost::bind( &HTTPServer::WriteResponseDone, this, TcpConnectionWeakPtr(conn) ) );
+    conn->set_write_done_callback( 
+                    boost::bind( &HTTPServer::WriteResponseDone, this, 
+                                        TcpConnectionWeakPtr(conn) ) );
 }
 
 void HTTPServer::WriteResponseDone( TcpConnectionWeakPtr weak_conn )

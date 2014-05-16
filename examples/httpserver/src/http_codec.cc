@@ -67,7 +67,8 @@ HTTPCodec::HTTPCodec()
 
 void HTTPCodec::OnNewConnection( TcpConnectionPtr conn )
 {
-    boost::shared_ptr<HTTPRequestParsingState> state = boost::make_shared<HTTPRequestParsingState>();
+    boost::shared_ptr<HTTPRequestParsingState> state = 
+                            boost::make_shared<HTTPRequestParsingState>();
     state->status = kInit;
     state->func = boost::bind( &HTTPCodec::StartParsing, this, _1, _2 );
     conn->set_context( state );
@@ -76,7 +77,8 @@ void HTTPCodec::OnNewConnection( TcpConnectionPtr conn )
 void HTTPCodec::OnMessage(TcpConnectionPtr conn, Buffer * buf)
 {
     TcpConnection::Context ctx = conn->context();
-    HTTPRequestParsingStatePtr state = boost::any_cast<HTTPRequestParsingStatePtr>(ctx);
+    HTTPRequestParsingStatePtr state = 
+                            boost::any_cast<HTTPRequestParsingStatePtr>(ctx);
 
     ParseResult res = kParseError;
 
@@ -108,19 +110,21 @@ string HTTPCodec::EncodeResponse( const HTTPResponse& res )
     string reply;
     bool has_body = res.body_length() != 0u;
     reply += boost::str( boost::format("%s %u %s%s") % res.HTTPVersion() 
-                                                    % res.status_ 
-                                                    % status_to_reason_[res.status_] 
-                                                    % HEADER_SEP );
+                                            % res.status_ 
+                                            % status_to_reason_[res.status_] 
+                                            % HEADER_SEP );
 
-    reply += boost::str( boost::format("Date: %s%s") % Rfc1123TimeNow() % HEADER_SEP );
+    reply += boost::str( boost::format("Date: %s%s") % Rfc1123TimeNow() 
+                                                    % HEADER_SEP );
     reply += boost::str( boost::format("Server: FX Server/0.0.1%s") % HEADER_SEP );
     reply += boost::str( boost::format("Content-Type: text/html%s") % HEADER_SEP );
     reply += boost::str( boost::format("Connection: close%s") % HEADER_SEP );
 
     if( has_body )
     {
-        reply += boost::str( boost::format("Content-Length: %u%s") % res.body_length() 
-                                                                % HEADER_SEP );
+        reply += boost::str( boost::format("Content-Length: %u%s") 
+                                                    % res.body_length() 
+                                                    % HEADER_SEP );
         reply += HEADER_SEP;                    /* for response body sep */
     }
 
@@ -162,7 +166,7 @@ ParseResult HTTPCodec::ReadRequestLine( HTTPRequestParsingState * state, Buffer*
 
     const string& request_type = parts[0];
     state->req.set_request_type( request_type );
-    state->req.set_request_path( parts[1] );
+    state->req.set_original_request_path( parts[1] );
 
     const string& request_version = parts[2];
 
@@ -204,7 +208,8 @@ ParseResult HTTPCodec::ReadRequestLine( HTTPRequestParsingState * state, Buffer*
     return kParseOK;
 }
 
-ParseResult HTTPCodec::ReadRequestHeader( HTTPRequestParsingState * state, Buffer* buf)
+ParseResult HTTPCodec::ReadRequestHeader(HTTPRequestParsingState *state, 
+                                        Buffer *buf)
 {
     assert( state->status == kParsingRequestHeader );
     assert( buf != NULL );
@@ -216,17 +221,20 @@ ParseResult HTTPCodec::ReadRequestHeader( HTTPRequestParsingState * state, Buffe
     {
         /* Blank line, which means header ends here*/
         /* see if request got any body */
-        boost::optional<string> content_length_val = state->req.GetHeader("content-length");
+        boost::optional<string> content_length_val = 
+                                    state->req.GetHeader("content-length");
         if( content_length_val )
         {
             unsigned content_length = 0;
             try
             {
-                content_length = boost::lexical_cast<unsigned>( content_length_val.get() );
+                content_length = 
+                    boost::lexical_cast<unsigned>(content_length_val.get() );
             }
-            catch( boost::bad_lexical_cast & e )
+            catch( boost::bad_lexical_cast& e )
             {
-                LOG(WARNING) << "lexical_cast failed, content_length_val.get() = " << content_length_val.get();
+                LOG(WARNING) << "lexical_cast failed, content_length_val.get() = "
+                            << content_length_val.get();
                 HTTPResponse res(400);                  /* Bad Request */
                 state->res.reset( res );
                 return kParseError;
@@ -255,9 +263,11 @@ ParseResult HTTPCodec::ReadRequestHeader( HTTPRequestParsingState * state, Buffe
             state->res.reset( res );
             return kParseError;
         }
-        state->req.set_header_length( state->req.header_length() + pos + HTTPCodec::HEADER_SEP_LEN );
+        state->req.set_header_length( state->req.header_length() + pos 
+                                        + HTTPCodec::HEADER_SEP_LEN );
         buf->ConsumeBytes( pos + HTTPCodec::HEADER_SEP_LEN );
-        boost::algorithm::to_lower(kv[0]);      /* header key is case-insensitive */
+        /* header key is case-insensitive */
+        boost::algorithm::to_lower(kv[0]);      
         state->req.AddHeader( kv[0], kv[1] );
         return kParseOK;
     }
@@ -268,7 +278,8 @@ ParseResult HTTPCodec::ReadRequestBody( HTTPRequestParsingState * state, Buffer*
     assert( state->status == kParsingRequestBody );
     assert( buf != NULL );
     unsigned body_length = state->req.body_length();
-    assert( body_length != 0 );                 /* if body_length == 0, we should never be here */
+    /* if body_length == 0, we should never be here */
+    assert( body_length != 0 );                 
 
     if( buf->BytesToRead() < body_length )
     {

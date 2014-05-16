@@ -19,6 +19,7 @@
 
 HTTPRequest::HTTPRequest()
     :header_length_(0), body_length_(0), major_version_(0), minor_version_(0)
+     ,static_gzipped(false), dynamic_gzipped(false)
 {
 
 }
@@ -36,7 +37,8 @@ bool HTTPRequest::AddHeader(const string& key, const string& val)
 
 string HTTPRequest::HTTPVersion() const
 {
-    return boost::str( boost::format("HTTP/%u.%u") % major_version_ % minor_version_ );
+    return boost::str( boost::format("HTTP/%u.%u") % major_version_ 
+                                                    % minor_version_ );
 }
 
 StringList HTTPRequest::HeaderNames() const
@@ -60,7 +62,7 @@ optional<string> HTTPRequest::GetHeader(const string& header_name) const
 ostream & operator<< (ostream& os, const HTTPRequest & req )
 {
     os << "request type: " << req.request_type() << '\n';
-    os << "request path: " << req.request_path() << '\n';
+    os << "request path: " << req.original_request_path() << '\n';
     os << "http version: " << req.HTTPVersion() << '\n';
     os << "header length: " << req.header_length() << '\n';
     os << "body length: " << req.body_length() << '\n';

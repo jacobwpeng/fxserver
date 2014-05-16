@@ -15,6 +15,7 @@
 
 #include <string>
 #include <vector>
+#include "http_defines.h"
 
 using std::string;
 using std::vector;
@@ -25,5 +26,6 @@ typedef vector<string> StringList;
 
 void SplitString( const string& src, const string& sep, StringList * res);
 string Rfc1123TimeNow();
+HTTPResponsePtr MakeResponse( unsigned http_ret_code );
 
 #endif   /* ----- #ifndef __HTTP_UTILITIES__  ----- */

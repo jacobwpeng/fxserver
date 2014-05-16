@@ -39,15 +39,37 @@ class HTTPRequest
         unsigned header_length() const { return header_length_; }
         unsigned body_length() const { return body_length_; }
         string request_type() const { return request_type_; }
-        string request_path() const { return request_path_; }
+        string original_request_path() const { return original_request_path_; }
+        string real_request_path() const { return real_request_path_; }
+        const StringList& request_path_candidates() const 
+        { return request_path_candidates_; }
 
-        void set_header_length( unsigned header_length ) { header_length_ = header_length; }
-        void set_body_length( unsigned body_length ) { body_length_ = body_length; }
-        void set_body( const char * buf, size_t len ) { body_.assign( buf, len ); }
-        void set_major_version( unsigned major_version ) { major_version_ = major_version; }
-        void set_minor_version( unsigned minor_version ) { minor_version_ = minor_version; }
+        void set_header_length( unsigned header_length ) 
+        { header_length_ = header_length; }
+
+        void set_body_length( unsigned body_length ) 
+        { body_length_ = body_length; }
+
+        void set_body( const char * buf, size_t len ) 
+        { body_.assign( buf, len ); }
+
+        void set_major_version( unsigned major_version ) 
+        { major_version_ = major_version; }
+
+        void set_minor_version( unsigned minor_version ) 
+        { minor_version_ = minor_version; }
+
         void set_request_type( const string& type ) { request_type_ = type; }
-        void set_request_path( const string& path ) { request_path_ = path; }
+        void set_real_request_path(const string& path)
+        { real_request_path_ = path; }
+
+        void set_original_request_path( const string& path ) 
+        { original_request_path_ = path; }
+
+        void set_static_gzipped() { static_gzipped = true; }
+        void set_dynamic_gzipped() { dynamic_gzipped = true; }
+        void add_request_path_candidate(const string& path)
+        { request_path_candidates_.push_back( path ); }
 
     private:
         unsigned header_length_;
@@ -56,8 +78,13 @@ class HTTPRequest
         unsigned minor_version_;
         string body_;
         string request_type_;
-        string request_path_;
+        string original_request_path_;
+        string real_request_path_;
+        StringList request_path_candidates_;
         map<string, string> headers_;
+
+        bool static_gzipped;
+        bool dynamic_gzipped;
 };
 
 typedef boost::optional<HTTPRequest> OptionalHTTPRequest;

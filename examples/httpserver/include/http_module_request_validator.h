@@ -21,16 +21,16 @@ class HTTPServer;
 class HTTPModuleRequestValidator
 {
     public:
-        HTTPModuleRequestValidator(HTTPServer * server);
+        HTTPModuleRequestValidator(HTTPServer *server);
         ~HTTPModuleRequestValidator();
 
         HTTPResponsePtr Process(HTTPRequestPtr req);
 
     private:
-        void Init();
+        RetCode Init();
 
     private:
-        HTTPServer * server_;
+        HTTPServer *server_;
 };
 
 #endif   /* ----- #ifndef __HTTP_MODULE_REQUEST_VALIDATOR__  ----- */
