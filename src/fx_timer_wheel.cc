@@ -25,7 +25,7 @@ namespace fx
     }
 
     const unsigned TimerWheel::kWheelSlotOffset[ kWheelCount ] = { 7, 6, 6, 6, 6 }; /* 31 */
-    const unsigned TimerWheel::kWheelSlotCount[ kWheelCount ] = { 128, 64, 64, 64, 64 }; /* must be pow 2 */
+    const unsigned TimerWheel::kWheelSlotCount[ kWheelCount ] = { 128, 64, 64, 64, 64 }; /* must be pow of 2 */
 
     TimerWheel::TimerWheel(EventLoop * loop)
         :loop_(loop), hands_idx_(0), last_timer_id_(0), last_expire_time_(0)
@@ -48,7 +48,7 @@ namespace fx
 
     int TimerWheel::NextTimeout(TimeStamp now)
     {
-        if( expire_time_queue_.empty() ) return -1;
+        if (expire_time_queue_.empty()) return -1;
         else
         {
             TimeStamp next_expire_time = expire_time_queue_.top();
@@ -97,8 +97,9 @@ namespace fx
 
     void TimerWheel::RemoveTimer( TimerId id )
     {
+        LOG(INFO) << "remove timer id = " << id;
         TimerMap::iterator iter = timers_.find( id );
-        assert( iter != timers_.end() );
+        assert (iter != timers_.end());
 
         TimeStamp expire_time = iter->second->expire_time;
 

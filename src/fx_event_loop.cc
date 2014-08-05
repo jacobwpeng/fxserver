@@ -151,10 +151,6 @@ namespace fx
             return id;
         }
     }
-    //TimerId EventLoop::RunAt( TimeStamp ts, const TimerCallback & cb )
-    //{
-    //    return timer_mgr_->RunAt( ts, cb );
-    //}
 
     void EventLoop::UpdateChannel(Channel * channel)
     {

@@ -48,7 +48,6 @@ namespace fx
 
             void RemoveTimer( TimerId id );
             TimerId RunAfter( int interval, const TimerCallback & cb );
-            //TimerId RunAt( TimeStamp ts, const TimerCallback & cb );
 
         private:
             void CallPendingFunctors();

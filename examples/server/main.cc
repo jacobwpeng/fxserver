@@ -69,7 +69,8 @@ void OnConnectionClosed( TcpConnectionPtr conn )
     if( not ctx.empty() )
     {
         TimerId id = boost::any_cast<TimerId>( ctx );
-        conn->loop()->RemoveTimer(id);
+        //超时的时候timer已经被删除，下面不能执行RemoveTimer否则会二次删除触发assertion
+        //conn->loop()->RemoveTimer(id);
         conn->set_context( TcpConnection::Context() );
     }
     LOG(INFO) << "Connection closed, fd = " << conn->fd();
@@ -85,11 +86,6 @@ void ThreadFunc(int port)
     loop.RunInLoop( boost::bind( &Acceptor::Listen, &acceptor) );
 
     loop.Run();
-}
-
-void Callback( int idx )
-{
-    LOG(INFO) << "idx = " << idx;
 }
 
 int main(int argc, char * argv[])
