@@ -46,8 +46,8 @@ namespace fx
     {
         acceptor_->set_new_connection_callback( boost::bind(&TcpServer::OnNewConnection, this, _1) );
         acceptor_->BindOrAbort( *local_addr_ );
-        base_loop_->RunInLoop( boost::bind( &Acceptor::Listen, acceptor_.get() ) );
         loop_threads_->Start();
+        base_loop_->RunInLoop( boost::bind( &Acceptor::Listen, acceptor_.get() ) );
     }
 
     void TcpServer::SetThreadNum( unsigned thread_num )
@@ -97,14 +97,14 @@ namespace fx
         LOG(INFO) << "remove conn from connections, fd = " << fd;
 
         TcpConnectionPtr conn = iter->second;
-        connections_.erase( iter );
+        connections_.erase(iter);
 
         if( cccb_ ) 
         {
              /* must run in the IO thread which conn belongs to */
             conn->loop()->RunInLoop( boost::bind(cccb_, conn ) );
         }
-        conn->loop()->QueueInLoop( boost::bind( &TcpConnection::Destroy, conn ) );
+        conn->loop()->QueueInLoop(boost::bind(&TcpConnection::Destroy, conn) );
         LOG(INFO) << "close Connection, client addr = " << conn->PeerAddr();
     }
 }

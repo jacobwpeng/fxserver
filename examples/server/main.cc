@@ -26,7 +26,7 @@
 using std::string;
 using namespace fx;
 
-int timeout = 5 * 1000;                        /* milliseconds */
+const int kTimeOut = 5 * 1000;                        /* milliseconds */
 
 void SayGoodbye( TcpConnectionWeakPtr weak_conn )
 {
@@ -44,7 +44,7 @@ void OnNewConnection( TcpConnectionPtr conn )
     LOG(INFO) << "New Connection, peer addr = " << conn->PeerAddr();
 
     TcpConnectionWeakPtr weak_conn( conn );
-    TimerId id = conn->loop()->RunAfter( timeout, boost::bind( SayGoodbye, weak_conn ) );
+    TimerId id = conn->loop()->RunAfter( kTimeOut, boost::bind( SayGoodbye, weak_conn ) );
     conn->set_context( id );
 }
 
@@ -59,19 +59,19 @@ void OnMessage( TcpConnectionPtr conn, Buffer * buf )
     TimerId id = boost::any_cast<TimerId>( conn->context() );
 
     conn->loop()->RemoveTimer(id);
-    id = conn->loop()->RunAfter( timeout, boost::bind( SayGoodbye, TcpConnectionWeakPtr(conn) ) );
+    id = conn->loop()->RunAfter( kTimeOut, boost::bind( SayGoodbye, TcpConnectionWeakPtr(conn) ) );
     conn->set_context( id );
 }
 
 void OnConnectionClosed( TcpConnectionPtr conn )
 {
     TcpConnection::Context ctx = conn->context();
-    if( not ctx.empty() )
+    if(not ctx.empty())
     {
         TimerId id = boost::any_cast<TimerId>( ctx );
         //超时的时候timer已经被删除，下面不能执行RemoveTimer否则会二次删除触发assertion
         //conn->loop()->RemoveTimer(id);
-        conn->set_context( TcpConnection::Context() );
+        conn->set_context(TcpConnection::Context());
     }
     LOG(INFO) << "Connection closed, fd = " << conn->fd();
 }
@@ -90,6 +90,7 @@ void ThreadFunc(int port)
 
 int main(int argc, char * argv[])
 {
+    //daemon(0, 0);
     google::InitGoogleLogging(argv[0]);
     if( argc != 3 )
     {
@@ -97,14 +98,14 @@ int main(int argc, char * argv[])
     }
     EventLoop loop;
 
-    int port = boost::lexical_cast<int>( argv[1] );
-    size_t thread_count = boost::lexical_cast<size_t>( argv[2] );
+    int port = boost::lexical_cast<int>(argv[1]);
+    size_t thread_count = boost::lexical_cast<size_t>(argv[2]);
 
-    TcpServer s( &loop, "0.0.0.0", port );
-    s.SetThreadNum( thread_count );
-    s.set_read_callback( OnMessage );
-    s.set_new_connection_callback( OnNewConnection );
-    s.set_close_connection_callback( OnConnectionClosed );
+    TcpServer s(&loop, "0.0.0.0", port );
+    s.SetThreadNum(thread_count);
+    s.set_read_callback(OnMessage);
+    s.set_new_connection_callback(OnNewConnection);
+    s.set_close_connection_callback(OnConnectionClosed);
     s.Start();
 
     loop.Run();

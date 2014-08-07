@@ -60,8 +60,6 @@ namespace fx
             TimerId RunAt( TimeStamp expire_time, TimerCallback cb );
             void RemoveTimer( TimerId id );
 
-            void AdjustTimer( const std::vector<TimerId>& id );     /* 调整start之前加入的timer */
-
         private:
             detail::SlotPos FindPos( int interval, bool update_hands = false, bool * overflow = NULL);
             void SwitchHands();
@@ -81,8 +79,6 @@ namespace fx
             TimeStamp last_expire_time_;
             TimerList * wheels_[kWheelCount];
             TimerMap timers_;
-            bool started_;
-            bool adjusted_;
             typedef std::priority_queue<TimeStamp, std::vector<TimeStamp>, std::greater<TimeStamp> > ExpireTimeQueue;
             ExpireTimeQueue expire_time_queue_;
     };

@@ -53,7 +53,6 @@ namespace fx
             void CallPendingFunctors();
             bool InLoopThread() const;
             void ProcessWakeUp();
-            void InitiallyAdjustTimers();
 
         private:
             bool calling_functors_;
@@ -67,7 +66,6 @@ namespace fx
             int wakeup_fds_[2];
             boost::atomic<bool> quit_;
             boost::scoped_ptr<TimerWheel> timer_mgr_;
-            std::vector<TimerId> non_adjusted_timers_;
 
             bool started_;
             uint64_t iteration_;
