@@ -40,11 +40,11 @@ LIST(APPEND FX_SRC_LIST
         src/fx_event_loop.cc
         src/fx_event_loop_thread.cc
         src/fx_event_loop_thread_pool.cc
-        #src/main.cc
     )
 
 ADD_LIBRARY( ${LIBNAME} STATIC ${FX_SRC_LIST} )
-ADD_SUBDIRECTORY( examples )
-
+add_subdirectory(base)
+#ADD_SUBDIRECTORY( examples )
+#
 ENABLE_TESTING()
 ADD_SUBDIRECTORY( tests )
