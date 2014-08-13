@@ -14,7 +14,6 @@
 #ifndef  __FX_OBJECT_POOL_HPP__
 #define  __FX_OBJECT_POOL_HPP__
 
-#include <vector>
 #include <boost/pool/pool.hpp>
 
 namespace fx
