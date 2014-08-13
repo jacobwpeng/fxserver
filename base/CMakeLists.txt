@@ -5,6 +5,6 @@ PROJECT(fx_base)
 include_directories(/opt/include)
 include_directories(bus/include)
 
-list(APPEND base_srcs bus/src/ring_buffer.cc)
+list(APPEND base_srcs bus/src/ring_buffer.cc bus/src/process_bus.cc)
 
 add_library("fxbase" STATIC ${base_srcs})
