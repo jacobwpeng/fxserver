@@ -36,23 +36,23 @@ namespace fx
 
         int nevents = epoll_wait(epoll_fd_, &events_[0], events_.size(), timeout_ms);
         TimeStamp now = base::Now();
-        if( nevents > 0 )
+        if (nevents > 0)
         {
             FillActiveChannels( nevents, active_channels );
-            if( static_cast<unsigned>(nevents) == events_.size() )
+            if (static_cast<unsigned>(nevents) == events_.size())
             {
                 /* 该扩容了 */
                 events_.resize( events_.size() * 2 );
             }
         }
-        else if( nevents == 0 )
+        else if (nevents == 0)
         {
             /* 啥都没发生，目测超时 */
         }
         else
         {
             /* 出错了呗 */
-            assert( false );
+            PLOG_IF(ERROR, errno != EINTR) << "epoll_wait return " << nevents;
         }
         return now;
     }

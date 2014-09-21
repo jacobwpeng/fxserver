@@ -21,6 +21,7 @@
 #include <fcntl.h>
 
 using fx::base::RingBuffer;
+static const char * mmap_filename = "/tmp/test-ringbuffer.mmap";
 
 class RingBufferTest : public ::testing::Test
 {
@@ -29,8 +30,9 @@ class RingBufferTest : public ::testing::Test
         {
             //create mmap file
             len_ = 20 * (1 << 20); //20 MiB
-            int fd_ = open("/tmp/test-ringbuffer.mmap", O_RDWR | O_CREAT, 0666);
+            int fd_ = open(mmap_filename, O_RDWR | O_CREAT, 0666);
             ASSERT_FALSE (fd_ < 0);
+            fcntl(fd_, F_SETFD, FD_CLOEXEC);
 
             ftruncate(fd_, len_);
             mem_ = ::mmap(NULL, len_, PROT_READ | PROT_WRITE, MAP_SHARED, fd_, 0);
@@ -77,11 +79,12 @@ class RingBufferTest : public ::testing::Test
         void WriteFromSubProcess()
         {
             if (0 != fork()) return;
-            int fd = open("/tmp/test-ringbuffer.mmap", O_RDWR);
+            int fd = open(mmap_filename, O_RDWR);
             ASSERT_FALSE (fd < 0);
 
-            void * mem = ::mmap(NULL, len_, PROT_READ | PROT_WRITE, MAP_SHARED, fd_, 0);
-            ASSERT_FALSE (mem == MAP_FAILED);
+            void * mem = ::mmap(NULL, len_, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+            if (mem == MAP_FAILED) perror("mmap");
+            ASSERT_TRUE (mem != MAP_FAILED);
             char * start = reinterpret_cast<char*>(mem);
             char * end = start + len_;
             RingBuffer buf(start, end, true);
@@ -94,6 +97,7 @@ class RingBufferTest : public ::testing::Test
                     succeed = buf.Push(strings_[i].data(), strings_[i].size());
                 }while (not succeed);
             }
+            close(fd);
             exit(0);
         }
 
@@ -133,8 +137,6 @@ TEST_F(RingBufferTest, TestPop)
     EXPECT_EQ (out, str);
     EXPECT_EQ (buf_->element_size(), 0u);
     EXPECT_TRUE (buf_->empty());
-
-    delete msg;
 }
 
 TEST_F(RingBufferTest, TestMassivePush)
@@ -175,7 +177,6 @@ TEST_F(RingBufferTest, TestMassivePop)
             EXPECT_EQ ((size_t)len, fixed_length_string.size());
             std::string out(msg, len);
             EXPECT_EQ (out, fixed_length_string);
-            delete msg;
         }
     }while (msg != NULL);
 
@@ -199,7 +200,6 @@ TEST_F(RingBufferTest, TestRandomContent)
         EXPECT_EQ ((size_t)len, strings_[i].size());
         EXPECT_TRUE (out != NULL);
         EXPECT_EQ (std::string(out, len), strings_[i]);
-        delete out;
     }
 }
 
@@ -217,6 +217,5 @@ TEST_F(RingBufferTest, TestLockFreeSingleRW)
 
         EXPECT_EQ ((size_t)len, strings_[i].size());
         EXPECT_EQ (std::string(out, len), strings_[i]);
-        delete out;
     }
 }

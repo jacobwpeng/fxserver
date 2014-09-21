@@ -23,6 +23,8 @@
 #include "fx_tcp_connection.h"
 #include "fx_net_address.h"
 
+#include "pidfile.h"
+
 using std::string;
 using namespace fx;
 
@@ -81,16 +83,16 @@ void ThreadFunc(int port)
     EventLoop loop;
 
     Acceptor acceptor(&loop);
-    acceptor.BindOrAbort( "0.0.0.0", port );
+    acceptor.BindOrAbort("0.0.0.0", port);
 
-    loop.RunInLoop( boost::bind( &Acceptor::Listen, &acceptor) );
+    loop.RunInLoop( boost::bind(&Acceptor::Listen, &acceptor) );
 
     loop.Run();
 }
 
 int main(int argc, char * argv[])
 {
-    //daemon(0, 0);
+    fx::base::PidFile * pidfile = fx::base::PidFile::Instance();
     google::InitGoogleLogging(argv[0]);
     if( argc != 3 )
     {

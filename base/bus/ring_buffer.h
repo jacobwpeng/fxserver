@@ -24,31 +24,24 @@ namespace fx
         {
             struct OffsetData
             {
-                OffsetData()
-                    :front_offset(0), back_offset(0), element_size(0)
-                {
-
-                }
                 ptrdiff_t front_offset;
                 ptrdiff_t back_offset;
                 size_t element_size;
             };
 
             public:
-                typedef boost::function< char* (int) > Allocator;
                 static const size_t kMaxBufferBodyLength = 1 << 16; //64KB
 
             public:
-                RingBuffer(char * start, char * end, bool reuse_offsetdata, Allocator allocator = RingBuffer::DefaultAllocator);
+                RingBuffer(char * start, char * end, bool reuse_offsetdata);
                 bool Push(const char * buf, int len);
                 char * Pop(int* len);
 
                 int space_left() const;
                 bool empty() const;
                 size_t element_size() const;
-                
+
             private:
-                static char * DefaultAllocator(int len);
                 char * get_front() const;
                 char * get_back() const;
 
@@ -61,13 +54,12 @@ namespace fx
                 char * Read(int * plen);
 
             private:
-                static const size_t kMaxBufferHeaderLength = sizeof(int);
-                static const size_t kMaxBufferLength = kMaxBufferHeaderLength  + kMaxBufferBodyLength;
+                static const size_t kBufferHeaderLength = sizeof(int);
+                static const size_t kMaxBufferLength = kBufferHeaderLength  + kMaxBufferBodyLength;
                 static const size_t kExtraSpace = 1;
                 char * start_;
                 char * end_;
                 volatile OffsetData * offset_;
-                Allocator allocator_;
         };
     }
 }

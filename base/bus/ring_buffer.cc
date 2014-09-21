@@ -12,20 +12,14 @@
 
 #include "ring_buffer.h"
 
-char * fx::base::RingBuffer::DefaultAllocator(int len)
-{
-    assert (len >= 0);
-    return new char[len];
-}
-
-fx::base::RingBuffer::RingBuffer(char * start, char * end, bool reuse_offsetdata, Allocator allocator)
-    :allocator_(allocator)
+static __thread char local_buf[fx::base::RingBuffer::kMaxBufferBodyLength];
+fx::base::RingBuffer::RingBuffer(char * start, char * end, bool reuse_offsetdata)
 {
     assert (end >= start);
     assert (end >= start + sizeof(OffsetData) + kExtraSpace);
 
     void * mem = start;
-    offset_ = new (mem) OffsetData;
+    offset_ = reinterpret_cast<OffsetData*>(mem);
 
     start_ = start + sizeof(OffsetData);
     end_ = end;
@@ -172,9 +166,8 @@ char * fx::base::RingBuffer::Read(int * plen)
     assert (kBufferLength > 0);
     assert ((size_t)kBufferLength <= fx::base::RingBuffer::kMaxBufferBodyLength);   
     *plen = kBufferLength;
-    char * buf = allocator_(kBufferLength);
-    assert (buf);
-    char * content = front + fx::base::RingBuffer::kMaxBufferHeaderLength;
+    char * buf = local_buf;
+    char * content = front + fx::base::RingBuffer::kBufferHeaderLength;
 
     if (content > end_)
     {
@@ -204,7 +197,7 @@ int fx::base::RingBuffer::NextBufferLength() const
 
     assert (not empty());
     int len = 0;
-    if (front + fx::base::RingBuffer::kMaxBufferHeaderLength <= end_)
+    if (front + fx::base::RingBuffer::kBufferHeaderLength <= end_)
     {
         len = *(reinterpret_cast<int*>(front));
     }
@@ -213,7 +206,7 @@ int fx::base::RingBuffer::NextBufferLength() const
         ptrdiff_t offset = end_ - front;
         char * len_addr = reinterpret_cast<char *>(&len);
         memcpy(len_addr, front, offset);
-        memcpy(len_addr + offset, start_, fx::base::RingBuffer::kMaxBufferHeaderLength - offset);
+        memcpy(len_addr + offset, start_, fx::base::RingBuffer::kBufferHeaderLength - offset);
     }
     return len;
 }

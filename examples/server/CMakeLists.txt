@@ -11,7 +11,7 @@ LIST(APPEND SERVER_SRC_LIST main.cc
     )
 
 ADD_EXECUTABLE( ${BIN} ${SERVER_SRC_LIST} )
-TARGET_LINK_LIBRARIES( ${BIN} "fx"
+TARGET_LINK_LIBRARIES( ${BIN} "fx" "fxbase"
                         ${GLOG} 
                         ${Boost_LIBRARIES}
                         )

@@ -28,7 +28,7 @@ namespace fx
     const unsigned TimerWheel::kWheelSlotCount[ kWheelCount ] = { 128, 64, 64, 64, 64 }; /* must be pow of 2 */
 
     TimerWheel::TimerWheel(EventLoop * loop)
-        :loop_(loop), hands_idx_(0), last_timer_id_(0), last_expire_time_(0)
+        :loop_(loop), hands_idx_(0), last_timer_id_(0), last_expire_time_(base::Now())
     {
         for(unsigned idx = 0; idx != kWheelCount; ++idx)
         {
@@ -42,7 +42,6 @@ namespace fx
 
     TimerWheel::~TimerWheel()
     {
-        for(TimerMap::iterator s(timers_.begin()), e(timers_.end()); s != e; ++s) delete s->second;
     }
 
     int TimerWheel::NextTimeout(TimeStamp now)
@@ -64,7 +63,7 @@ namespace fx
 
     TimerId TimerWheel::RunAfter(int interval, TimerCallback cb )
     {
-        LOG(INFO) << "RunAfter, interval = " << interval;
+        //LOG(INFO) << "RunAfter, interval = " << interval;
         detail::SlotPos pos = FindPos(interval);
         detail::Timer * p = timer_pool_.Construct();
         p->id = ++last_timer_id_;
@@ -84,7 +83,7 @@ namespace fx
 
     TimerId TimerWheel::RunAt(TimeStamp expire_time, TimerCallback cb)
     {
-        LOG(INFO) << "RunAt expire_time = " << expire_time << ", last_expire_time_ = " << last_expire_time_;
+        //LOG(INFO) << "RunAt expire_time = " << expire_time << ", last_expire_time_ = " << last_expire_time_;
         int interval = 0;
         if(last_expire_time_ < expire_time) interval = expire_time - last_expire_time_;
 
@@ -93,7 +92,7 @@ namespace fx
 
     void TimerWheel::RemoveTimer(TimerId id)
     {
-        LOG(INFO) << "remove timer id = " << id;
+        //LOG(INFO) << "remove timer id = " << id;
         TimerMap::iterator iter = timers_.find(id);
         assert (iter != timers_.end());
 

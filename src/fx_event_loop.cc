@@ -71,6 +71,7 @@ namespace fx
             }
             channels.clear();
 
+            if (period_functor_) period_functor_();
             /* 调用pending functors */
             CallPendingFunctors();
 
@@ -83,13 +84,18 @@ namespace fx
 
             timeout = timer_mgr_->NextTimeout(now);
         }
-        LOG(INFO) << "EventLoop exiting...";
+        DLOG(INFO) << "EventLoop exiting...";
     }
 
     void EventLoop::Quit()
     {
         quit_ = true;
         if(not InLoopThread()) WakeUp();
+    }
+
+    void EventLoop::SetPeriodFunctor(const PendingFunctor& functor)
+    {
+        period_functor_ = functor;
     }
 
     void EventLoop::RunInLoop(const PendingFunctor& f)

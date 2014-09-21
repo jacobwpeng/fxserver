@@ -43,8 +43,10 @@ namespace fx
             void UpdateChannel( Channel * channel );
             void RemoveChannel( Channel * channel );
 
-            void RunInLoop( const PendingFunctor & f );
-            void QueueInLoop( const PendingFunctor & f );
+            //Call this functor everytime loop wakes up from Poll
+            void SetPeriodFunctor(const PendingFunctor& functor);
+            void RunInLoop(const PendingFunctor & f);
+            void QueueInLoop(const PendingFunctor & f);
 
             void RemoveTimer( TimerId id );
             TimerId RunAfter( int interval, const TimerCallback & cb );
@@ -61,6 +63,7 @@ namespace fx
             boost::mutex call_functors_mutex_;
             typedef std::vector<PendingFunctor> FunctorList;
             FunctorList functors_;
+            PendingFunctor period_functor_;
 
             boost::scoped_ptr<Channel> wakeup_channel_;
             int wakeup_fds_[2];

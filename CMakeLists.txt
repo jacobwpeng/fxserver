@@ -1,25 +1,19 @@
-INCLUDE(CheckCXXCompilerFlag)
 CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
-SET(CMAKE_C_COMPILER "gcc")
-SET(CMAKE_CXX_COMPILER "g++")
-PROJECT( fx )
+PROJECT(fx)
 
-SET(CMAKE_CXX_FLAGS "-Wall -Wextra -Werror -Wno-unused-variable -Wno-invalid-offsetof -Wno-strict-aliasing" )
+SET(CMAKE_CXX_FLAGS "-Wall -Wextra -Werror -Wno-unused-variable -Wno-unused-private-field" )
 SET(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS} -ggdb")
 SET(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS} -DNDEBUG -O3" )
-
-CHECK_CXX_COMPILER_FLAG("-Wno-unused-local-typedefs" support)
-IF(support)
-    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unused-local-typedefs")
-ENDIF()
 
 SET(CMAKE_FIND_LIBRARY_PREFIXES "lib")
 SET(CMAKE_FIND_LIBRARY_SUFFIXES ".so" ".a")
 
 SET(LIBNAME "fx")
 
-INCLUDE_DIRECTORIES(/opt/include)
-INCLUDE_DIRECTORIES(include)
+include_directories(/opt/include)
+include_directories(include)
+include_directories(base/bus)
+include_directories(base/pidfile)
 
 FIND_LIBRARY(GLOG "glog")
 FIND_PACKAGE(Boost COMPONENTS REQUIRED system thread)
@@ -44,7 +38,6 @@ LIST(APPEND FX_SRC_LIST
 
 ADD_LIBRARY( ${LIBNAME} STATIC ${FX_SRC_LIST} )
 add_subdirectory(base)
-#ADD_SUBDIRECTORY( examples )
-#
+ADD_SUBDIRECTORY(examples)
 ENABLE_TESTING()
-ADD_SUBDIRECTORY( tests )
+ADD_SUBDIRECTORY(tests)
