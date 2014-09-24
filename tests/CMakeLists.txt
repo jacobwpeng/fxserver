@@ -1,25 +1,22 @@
-CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
+cmake_minimum_required(VERSION 2.6)
 
-SET(BIN "gtest-all")
+set(BIN "gtest-all")
 
-INCLUDE_DIRECTORIES(/opt/include)
-INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/include)
-include_directories(${PROJECT_SOURCE_DIR}/base/bus)
+include_directories(${PROJECT_SOURCE_DIR}/base)
+include_directories(${PROJECT_SOURCE_DIR}/net)
 
-FIND_LIBRARY(GTEST "gtest")
-FIND_LIBRARY(PTHREAD "pthread" )
-FIND_LIBRARY(GLOG "glog")
-#FIND_PACKAGE(Boost COMPONENTS REQUIRED system thread)
-LIST(APPEND SRC_LIST 
+find_library(GTEST "gtest")
+find_library(PTHREAD "pthread" )
+find_library(GLOG "glog")
+list(APPEND SRC_LIST 
             gtest-all.cc
-            NetAddress/main.cc
-            Buffer/main.cc
-            Slice/main.cc
-            RingBuffer/main.cc
-            ProcessBus/main.cc
-            ProcessBusManager/main.cc
+            slice_unittest.cc
+            ringbuffer_unittest.cc
+            processbus_unittest.cc
+            timermanager_unittest.cc
+            netaddress_unittest.cc
     )
 
-ADD_EXECUTABLE( ${BIN} ${SRC_LIST} )
-TARGET_LINK_LIBRARIES( ${BIN} "fx" ${GTEST} ${PTHREAD} ${GLOG} "fxbase")
-ADD_TEST("gtest-all" ${BIN})
+add_executable(${BIN} ${SRC_LIST})
+target_link_libraries(${BIN} ${GTEST} ${PTHREAD} ${GLOG} "fxbase" "fxnet")
+add_test("gtest-all" ${BIN})

@@ -1,13 +1,10 @@
 INCLUDE(CheckCXXCompilerFlag)
 CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
-PROJECT(fx_base)
 
-include_directories(/opt/include)
+include_directories(${PROJECT_SOURCE_DIR}/base)
 
-list(APPEND base_srcs bus/ring_buffer.cc 
-                      bus/process_bus.cc
-                      bus/process_bus_manager.cc
-                      pidfile/pidfile.cc
-                      )
+list(APPEND base_srcs system_time.cc mmap_file.cc memory_list.cc slice.cc)
+list(APPEND base_srcs container/ring_buffer.cc)
+list(APPEND base_srcs bus/process_bus.cc)# bus/process_bus_manager.cc)
 
 add_library("fxbase" STATIC ${base_srcs})

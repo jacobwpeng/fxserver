@@ -13,55 +13,45 @@
 #ifndef  __PROCESS_BUS_H__
 #define  __PROCESS_BUS_H__
 
-#include <boost/scoped_ptr.hpp>
-#include <boost/noncopyable.hpp>
-#include <boost/property_tree/ptree_fwd.hpp>
-#include "ring_buffer.h"
+#include <memory>
+#include "container/ring_buffer.h"
+#include "mmap_file.h"
 
 namespace fx
 {
     namespace base
     {
-        class ProcessBus : boost::noncopyable
+        namespace bus
         {
-            public:
-                typedef boost::function<int(const char*, int)> Validator;
+            class ProcessBus
+            {
+                private:
+                    struct Header
+                    {
+                        const static int64_t kMagicNumber = 7316964413220353303;
+                        int64_t magic_number;
+                    };
+                    const static size_t kHeaderSize = sizeof(Header);
 
-            public:
-                ProcessBus(unsigned bus_id, unsigned mmap_len, const std::string & filepath);
-                ProcessBus(const boost::property_tree::ptree& pt);
-                ~ProcessBus();
+                private:
+                    ProcessBus();
 
-                int TryRecover();
-                int Connect();
-                int Listen();
+                public:
+                    static std::unique_ptr<ProcessBus> RestoreFrom(const std::string& filepath, size_t size);
+                    static std::unique_ptr<ProcessBus> CreateFrom(const std::string& filepath, size_t size);
+                    static std::unique_ptr<ProcessBus> ConnectTo(const std::string & filepath, size_t size);
+                    static const size_t kMaxBufferBodyLength = container::RingBuffer::kMaxBufferBodyLength;
 
-                bool Write(const char * buf, int len);
-                char * Read(int * plen);
+                    bool Write(const char * buf, int len);
+                    char * Read(int * plen);
 
-                size_t size() const;
-                static const size_t kMaxBufferBodyLength = RingBuffer::kMaxBufferBodyLength;
-
-            private:
-                struct Header
-                {
-                    bool locked;
-                };
-
-                bool Inited() const;
-                char * InitHeader(char * start);
-                int InitMMap(bool reuse);
-                std::string mmap_filename() const;
-
-            private:
-                const unsigned bus_id_;
-                void * mem_;
-                Header * header_;
-                const unsigned mmap_len_;
-                int mmap_fd_;
-                std::string filepath_;
-                boost::scoped_ptr<fx::base::RingBuffer> buf_;
-        };
+                    size_t size() const;
+                private:
+                    Header * header_;
+                    std::unique_ptr<fx::base::container::RingBuffer> buf_;
+                    std::unique_ptr<fx::base::MMapFile> file_;
+            };
+        }
     }
 }
 

@@ -9,21 +9,21 @@
  * =====================================================================================
  */
 
-#include "fx_net_address.h"
+#include "net_address.h"
 #include <sys/types.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
 
 #include <gtest/gtest.h>
 
-using fx::NetAddress;
+using fx::net::NetAddress;
 
 TEST(NetAddressTest, ConstructorUsingAddrAndPort)
 {
-    NetAddress addr( "0.0.0.0", 9026 );
+    NetAddress addr("0.0.0.0", 9026);
     EXPECT_EQ( addr.port(), 9026 );
     EXPECT_EQ( addr.ip_addr(), "0.0.0.0" );
-    EXPECT_EQ( addr.FullAddress(), "0.0.0.0:9026" );
+    EXPECT_EQ( addr.ToString(), "0.0.0.0:9026" );
 }
 
 TEST(NetAddressTest, ConstructorUsingsockaddr_in)
@@ -39,7 +39,7 @@ TEST(NetAddressTest, ConstructorUsingsockaddr_in)
 
     EXPECT_EQ( addr.port(), 9999 );
     EXPECT_EQ( addr.ip_addr(), "1.2.4.8" );
-    EXPECT_EQ( addr.FullAddress(), "1.2.4.8:9999" );
+    EXPECT_EQ( addr.ToString(), "1.2.4.8:9999" );
 }
 
 TEST(NetAddressTest, Tosockaddr_in)

@@ -11,208 +11,95 @@
  */
 
 #include "process_bus.h"
+#include "mmap_file.h"
 
-#include <cstdio>
-#include <vector>
-#include <fcntl.h>
-#include <unistd.h>
-#include <errno.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <sys/mman.h>
-#include <boost/property_tree/ptree.hpp>
-
-fx::base::ProcessBus::ProcessBus(unsigned bus_id, unsigned mmap_len, const std::string & filepath)
-    :bus_id_(bus_id)
-     , mem_(NULL)
-     , header_(NULL)
-     , mmap_len_(mmap_len) 
-     , mmap_fd_(-1)
-     , filepath_(filepath)
+namespace fx
 {
-}
-
-fx::base::ProcessBus::ProcessBus(const boost::property_tree::ptree& pt)
-    :bus_id_(pt.get<unsigned>("<xmlattr>.id"))
-     , mem_(NULL)
-     , header_(NULL)
-     , mmap_len_(pt.get<unsigned>("<xmlattr>.size")) 
-     , mmap_fd_(-1)
-     , filepath_(pt.get<std::string>("<xmlattr>.path"))
-{
-}
-
-fx::base::ProcessBus::~ProcessBus()
-{
-    if (mem_)
+    namespace base
     {
-        ::munmap(mem_, mmap_len_);
-    }
-
-    if (mmap_fd_ != -1)
-    {
-        close(mmap_fd_);
-    }
-}
-
-bool fx::base::ProcessBus::Inited() const
-{
-    return mmap_fd_ != -1;
-}
-
-bool fx::base::ProcessBus::Write(const char * buf, int len)
-{
-    return buf_->Push(buf, len);
-}
-
-char * fx::base::ProcessBus::Read(int * plen)
-{
-    return buf_->Pop(plen);
-}
-
-size_t fx::base::ProcessBus::size() const
-{
-    return buf_->element_size();
-}
-
-char * fx::base::ProcessBus::InitHeader(char * start)
-{
-    header_ = reinterpret_cast<Header*>(start);
-    start += sizeof(Header);
-    return start;
-}
-
-int fx::base::ProcessBus::InitMMap(bool reuse)
-{
-    std::string mmap_name = mmap_filename();
-
-    mmap_fd_ = open(mmap_name.c_str(), O_RDWR | O_CREAT, 0666);
-    if (mmap_fd_ < 0)
-    {
-        perror("open mmap");
-        return -1;
-    }
-    ::ftruncate(mmap_fd_, mmap_len_);
-
-    mem_ = ::mmap(NULL, mmap_len_, PROT_READ | PROT_WRITE, MAP_SHARED, mmap_fd_, 0);
-    if (mem_ == MAP_FAILED)
-    {
-        perror("mmap");
-        return -2;
-    }
-
-    char * start = reinterpret_cast<char*>(mem_);
-    char * end = start + mmap_len_;
-    buf_.reset (new fx::base::RingBuffer(start, end, reuse));
-    return 0;
-}
-
-int fx::base::ProcessBus::TryRecover()
-{
-    assert (not Inited());
-    std::string mmap_name = mmap_filename();
-
-    mmap_fd_ = open(mmap_name.c_str(), O_RDWR | O_CREAT, 0666);
-    if (mmap_fd_ < 0)
-    {
-        perror("open mmap");
-        return -1;
-    }
-    struct stat sb;
-    if (fstat(mmap_fd_, &sb) < 0)
-    {
-        perror("fstat");
-        return -2;
-    }
-    if (sb.st_size != mmap_len_) { return -3; }
-
-    mem_ = ::mmap(NULL, mmap_len_, PROT_READ | PROT_WRITE, MAP_SHARED, mmap_fd_, 0);
-    if (mem_ == MAP_FAILED)
-    {
-        perror("mmap");
-        return -4;
-    }
-
-    char * start = InitHeader(reinterpret_cast<char*>(mem_));
-    char * end = start + mmap_len_;
-    buf_.reset (new fx::base::RingBuffer(start, end, true));
-    return 0;
-}
-
-int fx::base::ProcessBus::Connect()
-{
-    assert (not Inited());
-    std::string mmap_name = mmap_filename();
-
-    bool reuse_old_data = true;
-    //First only try to open
-    mmap_fd_ = open(mmap_name.c_str(), O_RDWR);
-    if (mmap_fd_ < 0)
-    {
-        if (errno != ENOENT)
+        namespace bus
         {
-            perror("open mmap failed");
-            return -1;
-        }
-        else
-        {
-            //Then try to create
-            mmap_fd_ = open(mmap_name.c_str(), O_RDWR | O_CREAT | O_EXCL, 0666);
-            if (mmap_fd_ < 0)
+            ProcessBus::ProcessBus()
+                :header_(NULL)
             {
-                //No matter what happens, we exit
-                perror("create mmap file failed");
-                return -2;
             }
-            //Then resize the new created mmap file
-            ::ftruncate(mmap_fd_, mmap_len_);
-            reuse_old_data = false;
+
+            std::unique_ptr<ProcessBus> ProcessBus::RestoreFrom(const std::string& filepath, size_t size)
+            {
+                if (size < kHeaderSize) return NULL;
+
+                std::unique_ptr<ProcessBus> bus(new ProcessBus);
+                bus->file_.reset (new fx::base::MMapFile(filepath, size));
+                if (bus->file_->Inited() == false) return NULL;
+
+                ProcessBus::Header * header = reinterpret_cast<ProcessBus::Header*>(bus->file_->start());
+                if (header->magic_number != ProcessBus::Header::kMagicNumber) return NULL;
+
+                bus->header_ = header;
+                void * start = static_cast<char*>(bus->file_->start()) + kHeaderSize;
+                assert (bus->file_->size() > kHeaderSize);
+                bus->buf_ = std::move(fx::base::container::RingBuffer::RestoreFrom(start, bus->file_->size() - kHeaderSize));
+                return bus;
+            }
+
+            std::unique_ptr<ProcessBus> ProcessBus::CreateFrom(const std::string & filepath, size_t size)
+            {
+                if (size < kHeaderSize) return NULL;
+
+                std::unique_ptr<ProcessBus> bus(new ProcessBus);
+                bus->file_.reset (new fx::base::MMapFile(filepath, size, fx::base::MMapFile::create_if_not_exists | fx::base::MMapFile::truncate));
+                if (bus->file_->Inited() == false) return NULL;
+
+                ProcessBus::Header * header = reinterpret_cast<ProcessBus::Header*>(bus->file_->start());
+                header->magic_number = ProcessBus::Header::kMagicNumber;
+                bus->header_ = header;
+
+                void * start = static_cast<char*>(bus->file_->start()) + kHeaderSize;
+                assert (bus->file_->size() > kHeaderSize);
+                bus->buf_ = std::move(fx::base::container::RingBuffer::CreateFrom(start, bus->file_->size() - kHeaderSize));
+                return bus;
+            }
+
+            std::unique_ptr<ProcessBus> ProcessBus::ConnectTo(const std::string & filepath, size_t size)
+            {
+                if (size < kHeaderSize) return NULL;
+
+                std::unique_ptr<ProcessBus> bus(new ProcessBus);
+                bus->file_.reset (new fx::base::MMapFile(filepath, size, fx::base::MMapFile::create_if_not_exists));
+                if (bus->file_->Inited() == false) return NULL;
+
+                ProcessBus::Header * header = reinterpret_cast<ProcessBus::Header*>(bus->file_->start());
+                if (bus->file_->newly_created())
+                {
+                    header->magic_number = ProcessBus::Header::kMagicNumber;
+                }
+                else if (header->magic_number != ProcessBus::Header::kMagicNumber)
+                {
+                    return NULL;
+                }
+
+                bus->header_ = header;
+                void * start = static_cast<char*>(bus->file_->start()) + kHeaderSize;
+                assert (bus->file_->size() > kHeaderSize);
+                bus->buf_ = std::move(fx::base::container::RingBuffer::RestoreFrom(start, bus->file_->size() - kHeaderSize));
+                return bus;
+            }
+
+            bool ProcessBus::Write(const char * buf, int len)
+            {
+                return buf_->Push(buf, len);
+            }
+
+            char * ProcessBus::Read(int * plen)
+            {
+                return buf_->Pop(plen);
+            }
+
+            size_t ProcessBus::size() const
+            {
+                return buf_->element_size();
+            }
+
         }
     }
-
-    assert (mmap_fd_ >= 0);
-    mem_ = ::mmap(NULL, mmap_len_, PROT_READ | PROT_WRITE, MAP_SHARED, mmap_fd_, 0);
-    if (mem_ == MAP_FAILED)
-    {
-        perror("mmap");
-        return -3;
-    }
-
-    char * start = InitHeader(reinterpret_cast<char*>(mem_));
-    char * end = start + mmap_len_;
-    buf_.reset (new fx::base::RingBuffer(start, end, reuse_old_data)); //discard old data
-    return 0;
-}
-
-int fx::base::ProcessBus::Listen()
-{
-    assert (not Inited());
-    std::string mmap_name = mmap_filename();
-
-    mmap_fd_ = open(mmap_name.c_str(), O_RDWR | O_CREAT, 0666);
-    if (mmap_fd_ < 0)
-    {
-        perror("open mmap");
-        return -1;
-    }
-    ::ftruncate(mmap_fd_, mmap_len_);
-
-    mem_ = ::mmap(NULL, mmap_len_, PROT_READ | PROT_WRITE, MAP_SHARED, mmap_fd_, 0);
-    if (mem_ == MAP_FAILED)
-    {
-        perror("mmap");
-        return -2;
-    }
-
-    char * start = InitHeader(reinterpret_cast<char*>(mem_));
-    char * end = start + mmap_len_;
-    buf_.reset (new fx::base::RingBuffer(start, end, false)); //discard old data
-    return 0;
-}
-
-std::string fx::base::ProcessBus::mmap_filename() const
-{
-    std::ostringstream oss;
-    oss << filepath_ << "/" << bus_id_ << ".mmap";
-    return oss.str();
 }

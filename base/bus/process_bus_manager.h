@@ -15,6 +15,7 @@
 
 #include <map>
 #include <string>
+#include <memory>
 #include <boost/function.hpp>
 #include <boost/noncopyable.hpp>
 #include "process_bus.h"
@@ -23,28 +24,32 @@ namespace fx
 {
     namespace base
     {
-        class ProcessBusManager : boost::noncopyable
+        namespace bus
         {
-            public:
+            class ProcessBusManager : boost::noncopyable
+            {
+                public:
 
-                ProcessBusManager();
-                ~ProcessBusManager();
+                    ProcessBusManager();
+                    ~ProcessBusManager();
 
-                int Init(const std::string& conf_path);
-                int Connect(unsigned bus_id);
-                int Listen(unsigned bus_id);
-                int TryRecover(unsigned bus_id);
+                    int Init(const std::string& conf_path);
+                    int Connect(unsigned bus_id);
+                    int Listen(unsigned bus_id);
+                    int TryRecover(unsigned bus_id);
 
-                int Write(unsigned bus_id, const char * buf, int len);
-                int Read(unsigned bus_id, char ** pbuf, int * plen);
+                    int Write(unsigned bus_id, const char * buf, int len);
+                    int Read(unsigned bus_id, char ** pbuf, int * plen);
 
-            private:
-                ProcessBus * FindBus(unsigned bus_id);
+                private:
+                    typedef std::unique_ptr<ProcessBus> ProcessBusPtr;
+                    typedef std::map<unsigned, ProcessBusPtr> BusMap;
 
-            private:
-                typedef std::map<unsigned, ProcessBus*> BusMap;
-                BusMap bus_map_;
-        };
+                    ProcessBusPtr FindBus(unsigned bus_id);
+                private:
+                    BusMap bus_map_;
+            };
+        }
     }
 }
 
